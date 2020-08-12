@@ -50,13 +50,13 @@ class MainViewer(QtWidgets.QMainWindow):
         event.accept()
 
     def createPluginCallback(self, ui_name):
-        """ Creates plugin callback function
+        """ Creates a callback function for showing/opening the plugin
 
         Args:
             ui_name: Key to access plugin within plugins dictionary
 
         Returns:
-            Creates callback for showing/opening the plugin
+            Callback function to show/open the plugin
 
         """
         def pluginCallback():

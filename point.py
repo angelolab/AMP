@@ -18,6 +18,12 @@ class Point(object):
     def remove_figure_id(self, id):
         self.figure_ids.remove(id)
 
+    def safe_remove_figure_id(self, id):
+        try:
+            self.figure_ids.remove(id)
+        except ValueError:
+            return
+
     def set_param(self, name, data):
         self.params[name] = data
 
