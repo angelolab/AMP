@@ -9,7 +9,7 @@ from importlib import import_module
 def load_plugin(ui_file, main_viewer):
     imp_name = os.path.basename(ui_file).split('.')[0]
     plugin = import_module(imp_name)
-    builder = getattr(plugin, 'buildAsPlugin')
+    builder = getattr(plugin, 'build_as_plugin')
     return builder(main_viewer)
 
 

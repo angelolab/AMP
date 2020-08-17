@@ -69,7 +69,7 @@ class CohortTreeWidget(QtWidgets.QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def loadCohort(self, cohort_head):
+    def load_cohort(self, cohort_head):
         # list lowest depth tifs
         head = CohortTreeWidgetItem(self, cohort_head)
         head.setText(0, os.path.basename(cohort_head))

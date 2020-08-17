@@ -21,14 +21,14 @@ class PlotListWidget(QtWidgets.QListWidget):
         super().__init__(parent)
         self.path_to_name = {}
 
-    def addItem(self, name, plot, path):
+    def add_item(self, name, plot, path):
         super().addItem(PlotListWidgetItem(name, plot, path))
         self.path_to_name[path] = name
 
     # path is a static breadcumb trail to allow for renaming.
     # for file-images this is literally the filepath.
     # for other plots, this will be a different unique id.
-    def getItemRowByPath(self, path):
+    def get_item_row_by_path(self, path):
         if path in self.path_to_name.keys():
             name = self.path_to_name[path]
         else:
@@ -37,9 +37,9 @@ class PlotListWidget(QtWidgets.QListWidget):
         return self.row(matches[0]) if matches else -1
 
     # clear entry in path to name dictionary and delete
-    def deleteItem(self, row):
+    def delete_item(self, row):
         self.path_to_name.pop(self.item(row).path, None)
         sip.delete(self.takeItem(row))
 
-    def refreshCurrentPlot(self, canvas):
+    def refresh_current_plot(self, canvas):
         self.currentItem().refresh(canvas)

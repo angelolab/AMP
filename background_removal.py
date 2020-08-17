@@ -1,11 +1,8 @@
-import sys
-
 from PyQt5 import QtWidgets, QtCore, uic
 
 from mplwidget import ImagePlot
 from point import Point
 
-from PIL import Image
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
@@ -35,14 +32,15 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.executer = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         # connect UI callbacks
-        self.loadingAddButton.clicked.connect(self.onAddPoint)
-        self.loadingPointsList.currentItemChanged.connect(self.onPointChange)
-        self.loadingChannelSelect.currentTextChanged.connect(self.onChannelChange)
-        self.loadingRemoveButton.clicked.connect(self.onRemovePoint)
-        self.rparamsTestButton.clicked.connect(self.testBRParams)
+        self.loadingAddButton.clicked.connect(self.on_add_point)
+        self.loadingPointsList.currentItemChanged.connect(self.on_point_change)
+        self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
+        self.loadingRemoveButton.clicked.connect(self.on_remove_point)
+        self.rparamsTestButton.clicked.connect(self.test_br_params)
 
         self.setWindowTitle("Background Removal")
 
+    # closeEvent is reserved by pyqt so it can't follow style guide :/
     def closeEvent(self, event):
         """ Callback for exiting/closing plugin window
 
@@ -53,7 +51,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         """
         while len(self.points) > 0:
-            self.onRemovePoint()
+            self.on_remove_point()
 
         event.accept()
 
@@ -70,7 +68,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """
         return self.points[point_name].get_channel_data(chans=[channel_name])[channel_name]
 
-    def onAddPoint(self):
+    def on_add_point(self):
         """ Callback for Add Point button
 
         Checks for point existence and adds it to loadingPointsList
@@ -97,7 +95,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 self.points[point_path] = Point(point_path, tifs)
                 self.loadingPointsList.addItem(point_path)
 
-    def onPointChange(self, current, previous):
+    def on_point_change(self, current, previous):
         """ Callback for changing point selection in point list
 
         Reset's channel selection box options, updates plots, and refills
@@ -168,9 +166,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                                       2,
                                       QtWidgets.QTableWidgetItem(f'{br_params[2]}'))
 
-        self.main_viewer.refreshPlots()
+        self.main_viewer.refresh_plots()
 
-    def onChannelChange(self, current_text):
+    def on_channel_change(self, current_text):
         """ Callback for background channel reselection
 
         Refreshes plots w/ new background channel
@@ -200,7 +198,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 and self.points[current_point].get_param('BR_params') is not None
             ):
                 br_params = self.points[current_point].get_param('BR_params')[0]
-                channel_mask = self._generateMask(
+                channel_mask = self._generate_mask(
                     channel_data,
                     *br_params
                 )
@@ -213,9 +211,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                     )
 
             # refresh plots
-            self.main_viewer.refreshPlots()
+            self.main_viewer.refresh_plots()
 
-    def onRemovePoint(self):
+    def on_remove_point(self):
         """ Callback for Remove Point button
 
         Removes point from list and clears its associated figures
@@ -253,7 +251,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         else:
             print('No points are currently loaded...')
 
-    def _generateMask(self, background_image, radius, threshold, backcap):
+    def _generate_mask(self, background_image, radius, threshold, backcap):
         """ Mask generation algorithm
 
         Generates binaraized mask used for background removal
@@ -289,7 +287,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         return background_mask
 
-    def testBRParams(self):
+    def test_br_params(self):
         """ Callback for background removal 'test' button
 
         Generates background mask with current parameters, plots it,
@@ -312,7 +310,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         backcap = self.rparamsBackCapBox.value()
 
         # generate mask
-        background_mask = self._generateMask(
+        background_mask = self._generate_mask(
             background_image,
             radius,
             threshold,
@@ -350,11 +348,11 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                                   2,
                                   QtWidgets.QTableWidgetItem(f'{backcap}'))
 
-        self.main_viewer.refreshPlots()
+        self.main_viewer.refresh_plots()
 
 
 # function for amp plugin building
-def buildAsPlugin(main_viewer):
+def build_as_plugin(main_viewer):
     """ Returns an instance of BackgroundRemoval
 
     This function is common to all plugins; it allows the plugin loader
