@@ -223,22 +223,29 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """
 
         if self.loadingPointsList.currentItem():
+            # get current point key value
             current_point = self.loadingPointsList.currentItem().text()
 
+            # remove all of current point's figure ids
             if self.main_viewer.figures.remove_figures(
                 self.points[current_point].figure_ids
             ):
                 print('Figures successfully removed')
             else:
+                # this indicates a problem w/ either figure manager
+                # or untracked figure-point ownerships/associations
                 print('Some figures could not be located for removal')
 
+            # clear figure id's if they're associated with the removed point
             if self.preview_id in self.points[current_point].figure_ids:
                 self.preview_id = None
             if self.br_reuse_id in self.points[current_point].figure_ids:
                 self.br_reuse_id = None
 
+            # directly remove the point from the dictionary
             del self.points[current_point]
 
+            # remove point from point list
             self.loadingPointsList.takeItem(
                 self.loadingPointsList.currentRow()
             )
@@ -252,7 +259,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         Generates binaraized mask used for background removal
 
         Args:
-            background_image (ndarray): background channel to create mask with
+            background_image (ndarray): background channel to create mask with (const)
             radius (float): radius of gaussian blur
             theshold (float): binarization threshold post-bluring
             backcap (int): maximum pixel value pre-bluring
@@ -262,6 +269,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         """
 
+        # generate new array
         background_mask = np.zeros_like(background_image)
 
         # apply cap
