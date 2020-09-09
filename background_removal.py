@@ -2,24 +2,26 @@ from PyQt5 import QtWidgets, QtCore, uic
 
 from mplwidget import ImagePlot
 from point import Point
+from main_viewer import MainViewer
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
 import os
 import concurrent.futures
+from typing import Dict
 
 
 class BackgroundRemoval(QtWidgets.QMainWindow):
 
-    def __init__(self, main_viewer):
+    def __init__(self, main_viewer: MainViewer):
         super().__init__()
 
         # set reference to main window
         self.main_viewer = main_viewer
 
         # points dict (indexed by path)
-        self.points = {}
+        self.points: Dict[str, Point] = {}
 
         # reusable figure id's
         self.preview_id = None

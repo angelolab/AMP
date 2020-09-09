@@ -3,13 +3,15 @@ import os
 from PIL import Image
 import numpy as np
 
+from typing import List
+
 
 class Point(object):
-    def __init__(self, path, channels):
+    def __init__(self, path: str, channels: List[str]) -> None:
         self.path = path
         self.channels = channels
 
-        self.figure_ids = []
+        self.figure_ids: List[int] = []
         self.params = {}
 
     def add_figure_id(self, id):
