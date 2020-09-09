@@ -9,7 +9,7 @@ from scipy.ndimage import gaussian_filter
 
 import os
 import concurrent.futures
-from typing import Dict
+from typing import Dict, Any
 
 
 class BackgroundRemoval(QtWidgets.QMainWindow):
@@ -24,8 +24,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.points: Dict[str, Point] = {}
 
         # reusable figure id's
-        self.preview_id = None
-        self.br_reuse_id = None
+        self.preview_id: int = None
+        self.br_reuse_id: int = None
 
         # load ui elements into MainViewer class
         uic.loadUi("BackgroundRemoval.ui", self)
@@ -43,13 +43,13 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.setWindowTitle("Background Removal")
 
     # closeEvent is reserved by pyqt so it can't follow style guide :/
-    def closeEvent(self, event):
+    def closeEvent(self, event: QtCore.QEvent) -> None:
         """ Callback for exiting/closing plugin window
 
         Deletes points and relevant figure data before closing
 
         Args:
-            event: qt close event (passed via signal)
+            event (QtCore.QEvent): qt close event (passed via signal)
 
         """
         while len(self.points) > 0:
@@ -57,7 +57,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         event.accept()
 
-    def _get_point_channel_data(self, point_name, channel_name):
+    # TODO: Change Any's to np.ndarray when numpy 1.20 is released
+    def _get_point_channel_data(self, point_name: str, channel_name: str) -> Any:
         """ Helper function for accessing channel data in point
 
         Args:
@@ -65,12 +66,12 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             channel_name (str): name of channel within point
 
         Returns:
-            channel_data (ndarray): image data for given point's given channel
+            channel_data (numpy.ndarray): image data for given point's given channel
 
         """
         return self.points[point_name].get_channel_data(chans=[channel_name])[channel_name]
 
-    def on_add_point(self):
+    def on_add_point(self) -> None:
         """ Callback for Add Point button
 
         Checks for point existence and adds it to loadingPointsList
@@ -97,7 +98,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 self.points[point_path] = Point(point_path, tifs)
                 self.loadingPointsList.addItem(point_path)
 
-    def on_point_change(self, current, previous):
+    def on_point_change(self, current: QtWidgets.QListWidgetItem,
+                        previous: QtWidgets.QListWidgetItem) -> None:
         """ Callback for changing point selection in point list
 
         Reset's channel selection box options, updates plots, and refills
@@ -130,16 +132,18 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # gen/update plots
         newChannel = self.loadingChannelSelect.currentText()
         channel_data = self._get_point_channel_data(current.text(), newChannel)
+        plot_name = f"{current.text()} channel {newChannel} preview"
         if self.preview_id is not None and self.loadingReuseButton.isChecked():
             self.points[previous.text()].remove_figure_id(self.preview_id)
             self.points[current.text()].add_figure_id(self.preview_id)
 
-            self.main_viewer.figures.update_figure(self.preview_id,
-                                                   ImagePlot(channel_data))
+            self.main_viewer.figures.update_figure(self.preview_id, ImagePlot(channel_data),
+                                                   plot_name)
         # only make a plot here if no preview_id is set
         # otherwise, two plots are generated (one here and one in channel change call)
         elif self.preview_id is None:
-            self.preview_id = self.main_viewer.figures.add_figure(ImagePlot(channel_data))
+            self.preview_id = self.main_viewer.figures.add_figure(ImagePlot(channel_data),
+                                                                  plot_name)
             self.points[current.text()].add_figure_id(self.preview_id)
 
         # swap br_reuse_id ownership if relevant

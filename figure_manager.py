@@ -1,6 +1,6 @@
 from collections import deque
 from mplwidget import Plot
-from typing import List
+from typing import List, Union, Dict
 
 # prefilling dictionary prevents slow rehashing
 MAX_FIGS = 64
@@ -8,7 +8,8 @@ MAX_FIGS = 64
 
 class FigureManager(object):
     def __init__(self, plot_list: List[Plot]) -> None:
-        self.figure_map = dict.fromkeys(range((MAX_FIGS * 3) // 2))
+        self.figure_map: Dict[int, Union[Plot, None]] = dict.fromkeys(range((MAX_FIGS * 3) // 2))
+
         self.open_slots = deque([0])
 
         self.plot_list = plot_list
@@ -26,7 +27,7 @@ class FigureManager(object):
         """
         return self.figure_map[index]
 
-    def add_figure(self, plot_object: Plot, name: str = None) -> int:
+    def add_figure(self, plot_object: Plot, name: Union[str, None] = None) -> int:
         """Add new figure to figure manager
 
         Args:
@@ -69,7 +70,7 @@ class FigureManager(object):
 
         return index
 
-    def update_figure(self, index: int, new_plot: Plot, name: str = None) -> None:
+    def update_figure(self, index: int, new_plot: Plot, name: Union[str, None] = None) -> None:
         """Update figure at given index with new plotting data
 
         Args:
@@ -131,7 +132,7 @@ class FigureManager(object):
 
         return True
 
-    def remove_figures(self, indicies: List[int] = None) -> bool:
+    def remove_figures(self, indicies: Union[List[int], None] = None) -> bool:
         """Iteratively remove multiple figures
 
         Args:
