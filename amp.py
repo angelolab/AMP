@@ -3,7 +3,6 @@ import os
 from importlib import import_module
 
 # tools for loading amp plugins
-# TODO: Reimplement to build plugin from a *.py file
 
 
 def load_plugin(ui_file, main_viewer):

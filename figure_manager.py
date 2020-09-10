@@ -1,5 +1,6 @@
 from collections import deque
 from mplwidget import Plot
+from plotlistwidget import PlotListWidget
 from typing import List, Union, Dict
 
 # prefilling dictionary prevents slow rehashing
@@ -7,7 +8,7 @@ MAX_FIGS = 64
 
 
 class FigureManager(object):
-    def __init__(self, plot_list: List[Plot]) -> None:
+    def __init__(self, plot_list: PlotListWidget) -> None:
         self.figure_map: Dict[int, Union[Plot, None]] = dict.fromkeys(range((MAX_FIGS * 3) // 2))
 
         self.open_slots = deque([0])
@@ -59,13 +60,13 @@ class FigureManager(object):
         if name is None:
             name = f'Figure {index}'
 
-        self.plot_list.addItem(
+        self.plot_list.add_item(
             name,
             plot_object,
             index
         )
 
-        row = self.plot_list.getItemRowByPath(index)
+        row = self.plot_list.get_item_row_by_path(index)
         self.plot_list.setCurrentRow(row)
 
         return index
@@ -88,10 +89,10 @@ class FigureManager(object):
         del self.figure_map[index]
         self.figure_map[index] = new_plot
 
-        row = self.plot_list.getItemRowByPath(index)
+        row = self.plot_list.get_item_row_by_path(index)
         self.plot_list.item(row).plot = new_plot
         if name is not None:
-            self.plot_list.item(row).text = name
+            self.plot_list.item(row).setText(name)
 
     # TODO: Failing to remove figure or recomputing queue should explicitly throw error or warning
     def remove_figure(self, index: int) -> bool:
@@ -127,8 +128,8 @@ class FigureManager(object):
 
         self._trim_queue()
 
-        row = self.plot_list.getItemRowByPath(index)
-        self.plot_list.deleteItem(row)
+        row = self.plot_list.get_item_row_by_path(index)
+        self.plot_list.delete_item(row)
 
         return True
 
