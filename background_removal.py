@@ -102,12 +102,38 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 self.loadingPointsList.addItem(point_path)
 
     def _gen_preview_fig_name(self, point_name: str, channel_name: str) -> str:
+        """Generates pretty figure names for preview images
+
+        Args:
+            point_name (str):
+                Path like string to TIFs directory of FOV
+            channel_name (str):
+                Name of channel (with or without .tif(f))
+
+        Returns:
+            str:
+                Pretty figure name for background image
+        """
         reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
         return f"{reduced_point_name} channel {reduced_channel_name}"
 
     def _gen_mask_fig_name(self, point_name: str, channel_name: str,
                            br_params: List[numbers.Number]) -> str:
+        """Generates pretty figure names for background mask images
+
+        Args:
+            point_name (str):
+                Path like string to TIFs directory of FOV
+            channel_name (str):
+                Name of channel (with or without .tif(f))
+            br_pararms (list):
+                Parameters used for mask generation
+
+        Returns:
+            str:
+                Pretty figure name for background mask image
+        """
         reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
         return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
@@ -144,9 +170,11 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             )
 
         # gen/update plots
-        newChannel = self.loadingChannelSelect.currentText()
-        channel_data = self._get_point_channel_data(current.text(), newChannel)
-        plot_name = self._gen_preview_fig_name(current.text(), newChannel)
+        new_channel = self.loadingChannelSelect.currentText()
+
+        channel_data = self._get_point_channel_data(current.text(), new_channel)
+
+        plot_name = self._gen_preview_fig_name(current.text(), new_channel)
         if self.preview_id is not None and self.loadingReuseButton.isChecked():
             self.points[previous.text()].remove_figure_id(self.preview_id)
             self.points[current.text()].add_figure_id(self.preview_id)
@@ -188,7 +216,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         self.main_viewer.refresh_plots()
 
-    def on_channel_change(self, current_text):
+    def on_channel_change(self, current_text: str) -> None:
         """ Callback for background channel reselection
 
         Refreshes plots w/ new background channel
@@ -235,7 +263,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             # refresh plots
             self.main_viewer.refresh_plots()
 
-    def on_remove_point(self):
+    def on_remove_point(self) -> None:
         """ Callback for Remove Point button
 
         Removes point from list and clears its associated figures
@@ -273,7 +301,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         else:
             print('No points are currently loaded...')
 
-    def _generate_mask(self, background_image, radius, threshold, backcap):
+    def _generate_mask(self, background_image: Any, radius: float, threshold: float,
+                       backcap: int) -> Any:
         """ Mask generation algorithm
 
         Generates binaraized mask used for background removal
@@ -309,7 +338,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         return background_mask
 
-    def test_br_params(self):
+    def test_br_params(self) -> None:
         """ Callback for background removal 'test' button
 
         Generates background mask with current parameters, plots it,
