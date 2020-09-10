@@ -8,8 +8,11 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 import os
+import pathlib
 import concurrent.futures
-from typing import Dict, Any
+
+from typing import Dict, List, Any
+import numbers
 
 
 class BackgroundRemoval(QtWidgets.QMainWindow):
@@ -98,6 +101,17 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 self.points[point_path] = Point(point_path, tifs)
                 self.loadingPointsList.addItem(point_path)
 
+    def _gen_preview_fig_name(self, point_name: str, channel_name: str) -> str:
+        reduced_point_name = pathlib.Path(point_name).parts[-2]
+        reduced_channel_name = channel_name.split('.')[0]
+        return f"{reduced_point_name} channel {reduced_channel_name}"
+
+    def _gen_mask_fig_name(self, point_name: str, channel_name: str,
+                           br_params: List[numbers.Number]) -> str:
+        reduced_point_name = pathlib.Path(point_name).parts[-2]
+        reduced_channel_name = channel_name.split('.')[0]
+        return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
+
     def on_point_change(self, current: QtWidgets.QListWidgetItem,
                         previous: QtWidgets.QListWidgetItem) -> None:
         """ Callback for changing point selection in point list
@@ -132,7 +146,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # gen/update plots
         newChannel = self.loadingChannelSelect.currentText()
         channel_data = self._get_point_channel_data(current.text(), newChannel)
-        plot_name = f"{current.text()} channel {newChannel} preview"
+        plot_name = self._gen_preview_fig_name(current.text(), newChannel)
         if self.preview_id is not None and self.loadingReuseButton.isChecked():
             self.points[previous.text()].remove_figure_id(self.preview_id)
             self.points[current.text()].add_figure_id(self.preview_id)
@@ -189,7 +203,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             # get channel_data
             current_point = self.loadingPointsList.currentItem().text()
             channel_data = self._get_point_channel_data(current_point, current_text)
-            preview_name = f"{current_point} channel {current_text} preview"
+            preview_name = self._gen_preview_fig_name(current_point, current_text)
 
             # update preview
             if self.preview_id is not None and self.loadingReuseButton.isChecked():
@@ -206,7 +220,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 and self.points[current_point].get_param('BR_params') is not None
             ):
                 br_params = self.points[current_point].get_param('BR_params')[0]
-                mask_name = f"Point {current_point} channel {current_text} mask {br_params}"
+                mask_name = self._gen_mask_fig_name(current_point, current_text, br_params)
                 channel_mask = self._generate_mask(
                     channel_data,
                     *br_params
@@ -327,7 +341,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         # generate plot object for mask and create figure
         mask_name = \
-            f"Point {current_point} channel {current_channel} mask {[radius, threshold, backcap]}"
+            self._gen_mask_fig_name(current_point, current_channel, [radius, threshold, backcap])
+
         im_plot = ImagePlot(background_mask)
         if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():
             if self.br_reuse_id not in self.points[current_point].figure_ids:
