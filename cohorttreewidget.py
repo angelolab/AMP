@@ -3,10 +3,12 @@ from PyQt5 import QtWidgets, QtCore
 import os
 import sip
 
+from typing import List
+
 # Only supports single page tifs as of 6/22/2020
 
 
-def tif_bfs(heads, max_depth=6):
+def tif_bfs(heads: List[str], max_depth: int = 6) -> None:
     # Assembles QtTreeWidget structure for cohort w/ bredth-first search
     # Assumes all tifs of interest are in the same folder depth
     # Only loads single page tifs
@@ -60,16 +62,16 @@ def tif_bfs(heads, max_depth=6):
 
 
 class CohortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
-    def __init__(self, parent=None, path=None):
+    def __init__(self, parent: QtWidgets.QWidget = None, path: str = None) -> None:
         super().__init__(parent)
         self.path = path
 
 
 class CohortTreeWidget(QtWidgets.QTreeWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
 
-    def load_cohort(self, cohort_head):
+    def load_cohort(self, cohort_head: str) -> None:
         # list lowest depth tifs
         head = CohortTreeWidgetItem(self, cohort_head)
         head.setText(0, os.path.basename(cohort_head))

@@ -1,11 +1,13 @@
 import os
 
+from PyQt5 import QtWidgets
+
 from importlib import import_module
 
 # tools for loading amp plugins
 
 
-def load_plugin(ui_file, main_viewer):
+def load_plugin(ui_file: str, main_viewer: QtWidgets.QMainWindow) -> QtWidgets.QMainWindow:
     imp_name = os.path.basename(ui_file).split('.')[0]
     plugin = import_module(imp_name)
     builder = getattr(plugin, 'build_as_plugin')

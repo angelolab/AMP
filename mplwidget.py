@@ -11,16 +11,19 @@ import matplotlib.cm as cm
 
 from matplotlib.image import AxesImage
 
+from typing import Callable, Dict, Any, List
+
 
 class Plot(object):
     # base class for plot objects
     # plot objects store a plot_update function, and associated plot_data
-    def __init__(self, plot_update, plot_data):
+    def __init__(self, plot_update: Callable[[FigureCanvas, Dict[str, Any]], None],
+                 plot_data: Dict[str, Any]) -> None:
         self.plot_update = plot_update
         self.plot_data = plot_data
 
 
-def image_plot_update(canvas, data):
+def image_plot_update(canvas: FigureCanvas, data: Dict[str, Any]) -> None:
     # ImagePlot update function
     cur_xlim = []
     cur_ylim = []
@@ -37,14 +40,14 @@ def image_plot_update(canvas, data):
 
 class ImagePlot(Plot):
     # plots images via imshow
-    def __init__(self, data):
+    def __init__(self, data: Any) -> None:
         super().__init__(image_plot_update, {'image': data})
 
 
 # a more customizable toolbar (loadable icons)
 class CleanToolbar(NavigationToolbar):
-    toolitems = [t for t in NavigationToolbar.toolitems if
-                 t[0] in ('Home', 'Pan', 'Zoom', 'Save')]
+    toolitems: List[str] = [t for t in NavigationToolbar.toolitems if
+                            t[0] in ('Home', 'Pan', 'Zoom', 'Save')]
 
     # custom icon injection (could be made to be not so hardcoded)
     '''
@@ -56,12 +59,12 @@ class CleanToolbar(NavigationToolbar):
     # hardcoding is a little bad here?
     resourcedir = "./resources/icons/"
 
-    def __init__(self, canvas=None, parent=None):
+    def __init__(self, canvas: FigureCanvas = None, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(canvas, parent)
         self.sizePolicy().setHorizontalPolicy(QtWidgets.QSizePolicy.Expanding)
 
     # overloads _icon function to support custom icons
-    def _icon(self, name):
+    def _icon(self, name: str) -> QtGui.QIcon:
         if path.exists(path.join(self.basedir, name)):
             return super()._icon(name)
         else:
@@ -73,7 +76,7 @@ class CleanToolbar(NavigationToolbar):
 
 # class for handling plotting widget
 class MplWidget(QtWidgets.QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
         self.sizePolicy().setHorizontalPolicy(QtWidgets.QSizePolicy.Expanding)
         self._canvas = FigureCanvas(Figure(figsize=(5, 3)))

@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 
 from typing import List, Union, Dict, Any
+from numbers import Number
 
 
 class Point(object):
@@ -12,7 +13,7 @@ class Point(object):
         self.channels = channels
 
         self.figure_ids: List[int] = []
-        self.params = {}
+        self.params: Dict[str, dict] = {}
 
     def add_figure_id(self, id: int) -> None:
         self.figure_ids.append(id)
@@ -26,10 +27,10 @@ class Point(object):
         except ValueError:
             return
 
-    def set_param(self, name: str, data: dict) -> None:
+    def set_param(self, name: str, data: List[List[Number]]) -> None:
         self.params[name] = data
 
-    def get_param(self, name: str) -> Union[dict, None]:
+    def get_param(self, name: str) -> Union[List[List[Number]], None]:
         if name in self.params:
             return self.params[name]
         else:

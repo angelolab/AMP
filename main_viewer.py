@@ -1,3 +1,5 @@
+from cohorttreewidget import CohortTreeWidgetItem
+from plotlistwidget import PlotListWidgetItem
 import sys
 
 from PyQt5 import QtWidgets, QtCore, uic
@@ -13,6 +15,8 @@ import concurrent.futures
 
 import amp
 
+from typing import Dict, Any
+
 
 class MainViewer(QtWidgets.QMainWindow):
 
@@ -22,12 +26,14 @@ class MainViewer(QtWidgets.QMainWindow):
         uic.loadUi("MainViewer.ui", self)
 
         # TODO: load cached plugins
-        self.plugins = {}
+        self.plugins: Dict[str, QtWidgets.QMainWindow] = {}
 
         # General UI threadpool (probably shouldn't use this for big algos)
         self.executer = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         # connect UI callbacks
+        # TODO: find a good way to automatically determine the types for these
+        #       from .ui files
         self.PlotListWidget.itemChanged.connect(self.on_plot_item_change)
         self.PlotListWidget.currentItemChanged.connect(self.on_plot_list_change)
         self.CohortTreeWidget.itemClicked.connect(self.on_file_toggle)
@@ -40,7 +46,7 @@ class MainViewer(QtWidgets.QMainWindow):
         self.setWindowTitle("Main Viewer")
 
     # reserved by PyQt ( can't follow style guide :/ )
-    def closeEvent(self, event):
+    def closeEvent(self, event: QtCore.QEvent) -> None:
         """ Callback for Main Window Exit/Close
 
         Calls individual close events on open plugins and accepts close event
@@ -50,7 +56,7 @@ class MainViewer(QtWidgets.QMainWindow):
 
         event.accept()
 
-    def create_plugin_callback(self, ui_name):
+    def create_plugin_callback(self, ui_name: str) -> Any:
         """ Creates a callback function for showing/opening the plugin
 
         Args:
@@ -64,7 +70,7 @@ class MainViewer(QtWidgets.QMainWindow):
             self.plugins[ui_name].show()
         return plugin_callback
 
-    def on_plot_item_change(self, item):
+    def on_plot_item_change(self, item: PlotListWidgetItem) -> None:
         """ Change plot list item name callback
 
         Updates PlotListWidget's path to name/ui-text map.
@@ -77,7 +83,8 @@ class MainViewer(QtWidgets.QMainWindow):
         self.PlotListWidget.path_to_name[item.path] = item.text()
 
     # submit update to plot viewer (multithreading makes ui smoother here)
-    def on_plot_list_change(self, current, previous):
+    def on_plot_list_change(self, current: PlotListWidgetItem,
+                            previous: PlotListWidgetItem) -> None:
         """ Callback for updating viewer to display new plots
 
         Uses threadpool for 'pause-less' UI
@@ -94,7 +101,7 @@ class MainViewer(QtWidgets.QMainWindow):
                 current.plot.plot_data
             )
 
-    def refresh_plots(self):
+    def refresh_plots(self) -> None:
         """ Manually update viewer
 
         Use this when PlotListWidget won't directly change, but new plot
@@ -106,7 +113,7 @@ class MainViewer(QtWidgets.QMainWindow):
             self.MplWidget._canvas
         )
 
-    def load_cohort(self):
+    def load_cohort(self) -> None:
         """ Callback for loading files into main viewer
         """
         flags = QtWidgets.QFileDialog.ShowDirsOnly
@@ -116,7 +123,7 @@ class MainViewer(QtWidgets.QMainWindow):
                                                                 flags)
         self.CohortTreeWidget.load_cohort(folderpath)
 
-    def on_file_toggle(self, item, column):
+    def on_file_toggle(self, item: CohortTreeWidgetItem, column: int) -> None:
         """ Callback for toggling image plot of tiff file
 
         Adds/Removes plot of image to main viewer + plot list
@@ -150,7 +157,7 @@ class MainViewer(QtWidgets.QMainWindow):
         ):
             self.PlotListWidget.delete_item(row)
 
-    def add_plugin(self):
+    def add_plugin(self) -> None:
         """ Call back for loading plugin
 
         In the future, new (i.e uncached) plugins will be cached for

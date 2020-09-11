@@ -37,6 +37,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.executer = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         # connect UI callbacks
+        # TODO: find a good way to automatically determine the types for these
+        #       from .ui files
         self.loadingAddButton.clicked.connect(self.on_add_point)
         self.loadingPointsList.currentItemChanged.connect(self.on_point_change)
         self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
