@@ -155,6 +155,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """
 
         if current is None:
+            # unset set combo box
+            self.loadingChannelSelect.clear()
             return
 
         # set combo box
@@ -229,7 +231,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         """
 
-        if current_text:
+        if current_text and self.loadingPointsList.currentItem() is not None:
 
             # get channel_data
             current_point = self.loadingPointsList.currentItem().text()
@@ -292,6 +294,10 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 self.preview_id = None
             if self.br_reuse_id in self.points[current_point].figure_ids:
                 self.br_reuse_id = None
+
+            # clear rparamsTable entries:
+            while self.rparamsTable.rowCount() > 0:
+                self.rparamsTable.removeRow(self.rparamsTable.rowCount()-1)
 
             # directly remove the point from the dictionary
             del self.points[current_point]
@@ -410,7 +416,10 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
     def br_cell_click(self, row: int, column: int) -> None:
         """Callback for item selection in background removal parameters.
 
-        Ensures entire row is selected (mostly for visual appeal)
+        Ensures entire row is selected (mostly for visual appeal) and generates mask for selected
+        parameters.
+
+        TODO: Cache previous results ?
 
         Args:
             row (int):
@@ -418,11 +427,42 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             columns (int):
                 column of cell clicked
         """
+
+        # full row highlighting
         self.rparamsTable.setRangeSelected(
             QtWidgets.QTableWidgetSelectionRange(row, 0, row, 2),
             True
         )
-        return
+
+        # get attributes
+        current_point = self.loadingPointsList.currentItem().text()
+        current_channel = self.loadingChannelSelect.currentText()
+        background_image = self._get_point_channel_data(current_point, current_channel)
+
+        params = self.points[current_point].get_param('BR_params')[row]
+
+        # generate mask
+        background_mask = self._generate_mask(
+            background_image,
+            *params
+        )
+
+        # generate plot object for mask and create figure
+        mask_name = \
+            self._gen_mask_fig_name(current_point, current_channel, params)
+
+        im_plot = ImagePlot(background_mask)
+        if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():
+            if self.br_reuse_id not in self.points[current_point].figure_ids:
+                for point in self.points.values():
+                    point.safe_remove_figure_id(self.br_reuse_id)
+                self.points[current_point].add_figure_id(self.br_reuse_id)
+            self.main_viewer.figures.update_figure(self.br_reuse_id, im_plot, mask_name)
+        else:
+            self.br_reuse_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
+            self.points[current_point].add_figure_id(self.br_reuse_id)
+
+        self.main_viewer.refresh_plots()
 
 
 # function for amp plugin building
