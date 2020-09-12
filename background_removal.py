@@ -44,6 +44,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
         self.loadingRemoveButton.clicked.connect(self.on_remove_point)
         self.rparamsTestButton.clicked.connect(self.test_br_params)
+        self.rparamsTable.cellClicked.connect(self.br_cell_click)
 
         self.setWindowTitle("Background Removal")
 
@@ -406,6 +407,23 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         self.main_viewer.refresh_plots()
 
+    def br_cell_click(self, row: int, column: int) -> None:
+        """Callback for item selection in background removal parameters.
+
+        Ensures entire row is selected (mostly for visual appeal)
+
+        Args:
+            row (int):
+                row of cell clicked
+            columns (int):
+                column of cell clicked
+        """
+        self.rparamsTable.setRangeSelected(
+            QtWidgets.QTableWidgetSelectionRange(row, 0, row, 2),
+            True
+        )
+        return
+
 
 # function for amp plugin building
 def build_as_plugin(main_viewer: MainViewer) -> BackgroundRemoval:
@@ -416,6 +434,5 @@ def build_as_plugin(main_viewer: MainViewer) -> BackgroundRemoval:
 
     Args:
         main_viewer: reference to the main window
-
     """
     return BackgroundRemoval(main_viewer)
