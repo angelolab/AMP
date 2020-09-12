@@ -1,3 +1,5 @@
+# start custom imports
+# end custom imports
 from PyQt5 import QtWidgets, QtCore, uic
 
 from mplwidget import ImagePlot
@@ -18,6 +20,55 @@ import numbers
 class BackgroundRemoval(QtWidgets.QMainWindow):
 
     def __init__(self, main_viewer: MainViewer):
+        # start typedef
+        self.statusbar: QtWidgets.QStatusBar
+        self.menubar: QtWidgets.QMenuBar
+        self.runEvalCapVal: QtWidgets.QLabel
+        self.label_14: QtWidgets.QLabel
+        self.runBackCapVal: QtWidgets.QLabel
+        self.label_12: QtWidgets.QLabel
+        self.runThreshVal: QtWidgets.QLabel
+        self.label_10: QtWidgets.QLabel
+        self.runGausRadiusVal: QtWidgets.QLabel
+        self.label_8: QtWidgets.QLabel
+        self.runBackgroundButton: QtWidgets.QPushButton
+        self.runLoadButton: QtWidgets.QPushButton
+        self.runGroup: QtWidgets.QGroupBox
+        self.eparamsTable: QtWidgets.QTableView
+        self.eparamsEvalAllButton: QtWidgets.QPushButton
+        self.eparamsEvalButton: QtWidgets.QPushButton
+        self.eparamsEvalCapBox: QtWidgets.QDoubleSpinBox
+        self.label_7: QtWidgets.QLabel
+        self.eparamsRemoveBox: QtWidgets.QDoubleSpinBox
+        self.label_6: QtWidgets.QLabel
+        self.eparamsPointSelect: QtWidgets.QComboBox
+        self.label_5: QtWidgets.QLabel
+        self.label_4: QtWidgets.QLabel
+        self.eparamsChannelSelect: QtWidgets.QComboBox
+        self.eparamsReloadButton: QtWidgets.QPushButton
+        self.eparamsDeleteButton: QtWidgets.QPushButton
+        self.eparamsGroup: QtWidgets.QGroupBox
+        self.rparamsReloadButton: QtWidgets.QPushButton
+        self.rparamsDeleteButton: QtWidgets.QPushButton
+        self.rparamsTable: QtWidgets.QTableWidget
+        self.rparamsReuseButton: QtWidgets.QRadioButton
+        self.rparamsTestButton: QtWidgets.QPushButton
+        self.rparamsGausRadiusBox: QtWidgets.QDoubleSpinBox
+        self.label_2: QtWidgets.QLabel
+        self.label_3: QtWidgets.QLabel
+        self.rparamsBackCapBox: QtWidgets.QDoubleSpinBox
+        self.label: QtWidgets.QLabel
+        self.rparamsThreshBox: QtWidgets.QDoubleSpinBox
+        self.rparamsGroup: QtWidgets.QGroupBox
+        self.loadingReuseButton: QtWidgets.QRadioButton
+        self.loadingPointsList: QtWidgets.QListWidget
+        self.loadingChannelSelect: QtWidgets.QComboBox
+        self.loadingRemoveButton: QtWidgets.QPushButton
+        self.loadingAddButton: QtWidgets.QPushButton
+        self.loadingGroup: QtWidgets.QGroupBox
+        self.centralwidget: QtWidgets.QWidget
+        # end typedef
+
         super().__init__()
 
         # set reference to main window
@@ -37,8 +88,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.executer = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         # connect UI callbacks
-        # TODO: find a good way to automatically determine the types for these
-        #       from .ui files
         self.loadingAddButton.clicked.connect(self.on_add_point)
         self.loadingPointsList.currentItemChanged.connect(self.on_point_change)
         self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
@@ -546,7 +595,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
             # generate plot object for mask and create figure
             mask_name = \
-                self._gen_mask_fig_name(current_point, current_channel, [radius, threshold, backcap])
+                self._gen_mask_fig_name(current_point, current_channel,
+                                        [radius, threshold, backcap])
 
             im_plot = ImagePlot(background_mask)
             if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():

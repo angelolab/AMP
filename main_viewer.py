@@ -1,3 +1,8 @@
+# start custom imports
+from cohorttreewidget import CohortTreeWidget
+from plotlistwidget import PlotListWidget
+from mplwidget import MplWidget
+# end custom imports
 from cohorttreewidget import CohortTreeWidgetItem
 from plotlistwidget import PlotListWidgetItem
 import sys
@@ -21,6 +26,20 @@ from typing import Dict, Any
 class MainViewer(QtWidgets.QMainWindow):
 
     def __init__(self):
+        # start typedef
+        self.statusbar: QtWidgets.QStatusBar
+        self.menuPlugins: QtWidgets.QMenu
+        self.menuEdit: QtWidgets.QMenu
+        self.menuFile: QtWidgets.QMenu
+        self.menubar: QtWidgets.QMenuBar
+        self.CohortTreeWidget: CohortTreeWidget
+        self.label_2: QtWidgets.QLabel
+        self.PlotListWidget: PlotListWidget
+        self.label: QtWidgets.QLabel
+        self.MplWidget: MplWidget
+        self.centralwidget: QtWidgets.QWidget
+        # end typedef
+
         super().__init__()
         # load ui elements into MainViewer class
         uic.loadUi("MainViewer.ui", self)
