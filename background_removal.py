@@ -50,6 +50,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.rparamsTable.currentCellChanged.connect(self.br_cell_change)
 
         self.rparamsDeleteButton.clicked.connect(self.remove_br_params)
+        self.rparamsReloadButton.clicked.connect(self.reload_br_params)
 
         self.setWindowTitle("Background Removal")
 
@@ -504,6 +505,61 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
             # remove row from column
             self.rparamsTable.removeRow(self.rparamsTable.currentRow())
+
+    def reload_br_params(self) -> None:
+        """Callback for editing row of background reduction parameters
+        """
+        if self.rparamsTable.currentRow() >= 0:
+
+            # get attributes
+            current_point = self.loadingPointsList.currentItem().text()
+            current_channel = self.loadingChannelSelect.currentText()
+            background_image = self._get_point_channel_data(current_point, current_channel)
+
+            # reload data at current row index from points
+            br_params = self.points[current_point].get_param('BR_params')
+
+            # get alg params
+            radius = self.rparamsGausRadiusBox.value()
+            threshold = self.rparamsThreshBox.value()
+            backcap = self.rparamsBackCapBox.value()
+
+            br_params[self.rparamsTable.currentRow()] = [radius, threshold, backcap]
+
+            self.rparamsTable.setItem(self.rparamsTable.currentRow(),
+                                      0,
+                                      QtWidgets.QTableWidgetItem(f'{radius}'))
+            self.rparamsTable.setItem(self.rparamsTable.currentRow(),
+                                      1,
+                                      QtWidgets.QTableWidgetItem(f'{threshold}'))
+            self.rparamsTable.setItem(self.rparamsTable.currentRow(),
+                                      2,
+                                      QtWidgets.QTableWidgetItem(f'{backcap}'))
+
+            # generate mask
+            background_mask = self._generate_mask(
+                background_image,
+                radius,
+                threshold,
+                backcap
+            )
+
+            # generate plot object for mask and create figure
+            mask_name = \
+                self._gen_mask_fig_name(current_point, current_channel, [radius, threshold, backcap])
+
+            im_plot = ImagePlot(background_mask)
+            if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():
+                if self.br_reuse_id not in self.points[current_point].figure_ids:
+                    for point in self.points.values():
+                        point.safe_remove_figure_id(self.br_reuse_id)
+                    self.points[current_point].add_figure_id(self.br_reuse_id)
+                self.main_viewer.figures.update_figure(self.br_reuse_id, im_plot, mask_name)
+            else:
+                self.br_reuse_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
+                self.points[current_point].add_figure_id(self.br_reuse_id)
+
+            self.main_viewer.refresh_plots()
 
 
 # function for amp plugin building
