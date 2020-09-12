@@ -44,7 +44,12 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
         self.loadingRemoveButton.clicked.connect(self.on_remove_point)
         self.rparamsTestButton.clicked.connect(self.test_br_params)
+
+        # support arrow keys and clicking
         self.rparamsTable.cellClicked.connect(self.br_cell_click)
+        self.rparamsTable.currentCellChanged.connect(self.br_cell_change)
+
+        self.rparamsDeleteButton.clicked.connect(self.remove_br_params)
 
         self.setWindowTitle("Background Removal")
 
@@ -463,6 +468,42 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             self.points[current_point].add_figure_id(self.br_reuse_id)
 
         self.main_viewer.refresh_plots()
+
+    def br_cell_change(self, new_row: int, new_col: int, old_row: int, old_col: int) -> None:
+        """Callback for arrow key selection support in background reduction params table
+
+        Basic wrapper for `br_cell_click`
+
+        Args:
+            new_row (int): Row of new current cell selected.
+            new_col (int): Column of new current cell selected.
+            old_row (int): Row of old current cell selected. Unused.
+            old_col (int): Column of new current cell selected. Unused.
+        """
+        # adjust for mismatched cell_change call on param deletion
+        current_point = self.loadingPointsList.currentItem().text()
+        num_br_params = len(self.points[current_point].get_param('BR_params'))
+
+        if new_row >= 0:
+            self.br_cell_click(
+                new_row - int(self.rparamsTable.rowCount() != num_br_params),
+                new_col
+            )
+
+    def remove_br_params(self) -> None:
+        """Callback for background reduction parameter row deletion
+        """
+        if self.rparamsTable.currentRow() >= 0:
+
+            # get attributes
+            current_point = self.loadingPointsList.currentItem().text()
+
+            # delete data from points
+            br_params = self.points[current_point].get_param('BR_params')
+            del br_params[self.rparamsTable.currentRow()]
+
+            # remove row from column
+            self.rparamsTable.removeRow(self.rparamsTable.currentRow())
 
 
 # function for amp plugin building
