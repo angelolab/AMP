@@ -2,7 +2,7 @@
 # end custom imports
 from PyQt5 import QtWidgets, QtCore, uic
 
-from mplwidget import ImagePlot
+from mplwidget import ImagePlot, Plot
 from point import Point
 from main_viewer import MainViewer
 
@@ -13,7 +13,7 @@ import os
 import pathlib
 import concurrent.futures
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Union
 import numbers
 
 
@@ -200,6 +200,27 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         reduced_channel_name = channel_name.split('.')[0]
         return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
 
+    def _add_update_figure(self, figure_id: Union[int, None], current_point: str, im_plot: Plot,
+                           mask_name: str,
+                           reuse_button: QtWidgets.QRadioButton = None) -> Union[int, None]:
+        """
+
+        """
+        is_checked = False
+        if reuse_button is not None:
+            is_checked = reuse_button.isChecked()
+
+        if figure_id is not None and is_checked:
+            if figure_id not in self.points[current_point].figure_ids:
+                for point in self.points.values():
+                    point.safe_remove_figure_id(figure_id)
+                self.points[current_point].add_figure_id(figure_id)
+            self.main_viewer.figures.update_figure(figure_id, im_plot, mask_name)
+        else:
+            figure_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
+            self.points[current_point].add_figure_id(figure_id)
+        return figure_id
+
     def on_point_change(self, current: QtWidgets.QListWidgetItem,
                         previous: QtWidgets.QListWidgetItem) -> None:
         """ Callback for changing point selection in point list
@@ -239,28 +260,21 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         channel_data = self._get_point_channel_data(current.text(), new_channel)
 
         plot_name = self._gen_preview_fig_name(current.text(), new_channel)
-        if self.preview_id is not None and self.loadingReuseButton.isChecked():
-            self.points[previous.text()].remove_figure_id(self.preview_id)
-            self.points[current.text()].add_figure_id(self.preview_id)
 
-            self.main_viewer.figures.update_figure(self.preview_id, ImagePlot(channel_data),
-                                                   plot_name)
-        # only make a plot here if no preview_id is set
-        # otherwise, two plots are generated (one here and one in channel change call)
-        elif self.preview_id is None:
-            self.preview_id = self.main_viewer.figures.add_figure(ImagePlot(channel_data),
-                                                                  plot_name)
-            self.points[current.text()].add_figure_id(self.preview_id)
+        self.preview_id = self._add_update_figure(self.preview_id, current.text(),
+                                                  ImagePlot(channel_data), plot_name,
+                                                  self.loadingReuseButton)
 
         # swap br_reuse_id ownership if relevant
-        if(
-            self.br_reuse_id is not None
-            and self.points[current.text()].get_param('BR_params') is not None
-            and self.rparamsReuseButton.isChecked()
-        ):
-            self.points[previous.text()].remove_figure_id(self.br_reuse_id)
-            self.points[current.text()].add_figure_id(self.br_reuse_id)
-            # figure update happens in channel change call
+        #           and self.points[current.text()].get_param('BR_params') is not None
+        # if(
+        #     self.br_reuse_id is not None
+        #     and self.rparamsReuseButton.isChecked()
+        # ):
+        #     print(previous.text())
+        #     self.points[previous.text()].remove_figure_id(self.br_reuse_id)
+        #     self.points[current.text()].add_figure_id(self.br_reuse_id)
+        #     # figure update happens in channel change call
 
         # refill rparamsTable
         while self.rparamsTable.rowCount() > 0:
@@ -298,31 +312,19 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             preview_name = self._gen_preview_fig_name(current_point, current_text)
 
             # update preview
-            if self.preview_id is not None and self.loadingReuseButton.isChecked():
-                self.main_viewer.figures.update_figure(self.preview_id, ImagePlot(channel_data),
-                                                       preview_name)
-            elif self.preview_id is not None:
-                self.preview_id = self.main_viewer.figures.add_figure(ImagePlot(channel_data),
-                                                                      preview_name)
-                self.points[current_point].add_figure_id(self.preview_id)
+            self.preview_id = self._add_update_figure(self.preview_id, current_point,
+                                                      ImagePlot(channel_data), preview_name,
+                                                      self.loadingReuseButton)
 
             # update background mask figure
-            if (
-                self.br_reuse_id is not None
-                and self.points[current_point].get_param('BR_params') is not None
-            ):
+            if self.points[current_point].get_param('BR_params'):
                 br_params = self.points[current_point].get_param('BR_params')[0]
                 mask_name = self._gen_mask_fig_name(current_point, current_text, br_params)
-                channel_mask = self._generate_mask(
-                    channel_data,
-                    *br_params
-                )
-                if self.rparamsReuseButton.isChecked():
-                    self.main_viewer.figures.update_figure(self.br_reuse_id,
-                                                           ImagePlot(channel_mask), mask_name)
-                else:
-                    self.br_reuse_id = self.main_viewer.figures.add_figure(ImagePlot(channel_mask),
-                                                                           mask_name)
+                channel_mask = self._generate_mask(channel_data, *br_params)
+
+                self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point,
+                                                           ImagePlot(channel_mask), mask_name,
+                                                           self.rparamsReuseButton)
 
             # refresh plots
             self.main_viewer.refresh_plots()
@@ -331,7 +333,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """ Callback for Remove Point button
 
         Removes point from list and clears its associated figures
-
         """
 
         if self.loadingPointsList.currentItem():
@@ -439,15 +440,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             self._gen_mask_fig_name(current_point, current_channel, [radius, threshold, backcap])
 
         im_plot = ImagePlot(background_mask)
-        if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():
-            if self.br_reuse_id not in self.points[current_point].figure_ids:
-                for point in self.points.values():
-                    point.safe_remove_figure_id(self.br_reuse_id)
-                self.points[current_point].add_figure_id(self.br_reuse_id)
-            self.main_viewer.figures.update_figure(self.br_reuse_id, im_plot, mask_name)
-        else:
-            self.br_reuse_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
-            self.points[current_point].add_figure_id(self.br_reuse_id)
+        self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
+                                                   mask_name, self.rparamsReuseButton)
 
         # get next row and add data to points for storage
         new_row = self.rparamsTable.rowCount()
@@ -509,15 +503,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             self._gen_mask_fig_name(current_point, current_channel, params)
 
         im_plot = ImagePlot(background_mask)
-        if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():
-            if self.br_reuse_id not in self.points[current_point].figure_ids:
-                for point in self.points.values():
-                    point.safe_remove_figure_id(self.br_reuse_id)
-                self.points[current_point].add_figure_id(self.br_reuse_id)
-            self.main_viewer.figures.update_figure(self.br_reuse_id, im_plot, mask_name)
-        else:
-            self.br_reuse_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
-            self.points[current_point].add_figure_id(self.br_reuse_id)
+
+        self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
+                                                   mask_name, self.rparamsReuseButton)
 
         self.main_viewer.refresh_plots()
 
@@ -604,15 +592,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                                         [radius, threshold, backcap])
 
             im_plot = ImagePlot(background_mask)
-            if self.br_reuse_id is not None and self.rparamsReuseButton.isChecked():
-                if self.br_reuse_id not in self.points[current_point].figure_ids:
-                    for point in self.points.values():
-                        point.safe_remove_figure_id(self.br_reuse_id)
-                    self.points[current_point].add_figure_id(self.br_reuse_id)
-                self.main_viewer.figures.update_figure(self.br_reuse_id, im_plot, mask_name)
-            else:
-                self.br_reuse_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
-                self.points[current_point].add_figure_id(self.br_reuse_id)
+            self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
+                                                       mask_name, self.rparamsReuseButton)
 
             self.main_viewer.refresh_plots()
 
@@ -625,7 +606,7 @@ def build_as_plugin(main_viewer: MainViewer) -> BackgroundRemoval:
     to correctly load the plugin.
 
     Args:
-        main_viewer: reference to the main window
+        main_viewer (MainViewer): reference to the main window
     """
 
     return BackgroundRemoval(main_viewer)

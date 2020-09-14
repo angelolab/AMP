@@ -33,13 +33,16 @@ class Point:
 
     def add_figure_id(self, id: int) -> None:
         self.figure_ids.append(id)
+        # print(f'{self.path}\nAfter add {self.figure_ids}\n')
 
     def remove_figure_id(self, id: int) -> None:
         self.figure_ids.remove(id)
+        # print(f'{self.path}\nAfter remove {self.figure_ids}\n')
 
     def safe_remove_figure_id(self, id: int) -> None:
         try:
             self.figure_ids.remove(id)
+            # print(f'{self.path}\nAfter SAFE remove {self.figure_ids}\n')
         except ValueError:
             return
 
