@@ -111,8 +111,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         Args:
             event (QtCore.QEvent): qt close event (passed via signal)
-
         """
+
         while len(self.points) > 0:
             self.on_remove_point()
 
@@ -130,6 +130,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             channel_data (numpy.ndarray): image data for given point's given channel
 
         """
+
         return self.points[point_name].get_channel_data(chans=[channel_name])[channel_name]
 
     def on_add_point(self) -> None:
@@ -137,6 +138,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         Checks for point existence and adds it to loadingPointsList
         """
+
         point_path = QtWidgets.QFileDialog.getExistingDirectory(self,
                                                                 'Open',
                                                                 '~')
@@ -172,6 +174,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             str:
                 Pretty figure name for background image
         """
+
         reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
         return f"{reduced_point_name} channel {reduced_channel_name}"
@@ -192,6 +195,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             str:
                 Pretty figure name for background mask image
         """
+
         reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
         return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
@@ -379,7 +383,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         Returns:
             background_mask (ndarray): generated binarized mask
-
         """
 
         # generate new array
@@ -408,7 +411,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         Generates background mask with current parameters, plots it,
         adds parameters to parameter table, and stores relevent data
         within the selected 'Point' object.
-
         """
 
         if self.loadingPointsList.currentItem() is None:
@@ -530,6 +532,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             old_row (int): Row of old current cell selected. Unused.
             old_col (int): Column of new current cell selected. Unused.
         """
+
         # adjust for mismatched cell_change call on param deletion
         current_point = self.loadingPointsList.currentItem().text()
         num_br_params = len(self.points[current_point].get_param('BR_params'))
@@ -543,6 +546,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
     def remove_br_params(self) -> None:
         """Callback for background reduction parameter row deletion
         """
+
         if self.rparamsTable.currentRow() >= 0:
 
             # get attributes
@@ -558,6 +562,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
     def reload_br_params(self) -> None:
         """Callback for editing row of background reduction parameters
         """
+
         if self.rparamsTable.currentRow() >= 0:
 
             # get attributes
@@ -622,4 +627,5 @@ def build_as_plugin(main_viewer: MainViewer) -> BackgroundRemoval:
     Args:
         main_viewer: reference to the main window
     """
+
     return BackgroundRemoval(main_viewer)
