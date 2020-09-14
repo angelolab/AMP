@@ -36,7 +36,7 @@ for ui_file, py_file in pairs:
             del py_data[0]
         del py_data[0]
 
-    py_data.insert(0, '# end custom imports\n')
+    py_data.insert(0, '# end custom imports - DO NOT MANUALLY EDIT ABOVE\n')
     for cc in custom_classes:
         for h_file in py_files:
             all_classes = [
@@ -52,7 +52,7 @@ for ui_file, py_file in pairs:
                         f'from {all_classes[cc == all_names].__module__} import {cc}\n'
                     )
                     break
-    py_data.insert(0, '# start custom imports\n')
+    py_data.insert(0, '# start custom imports - DO NOT MANUALLY EDIT BELOW\n')
 
     # create stub type for all widgets
     init_line_idx = [idx for idx, line in enumerate(py_data) if '__init__' in line][0]
@@ -61,7 +61,7 @@ for ui_file, py_file in pairs:
             del py_data[init_line_idx + 1]
         del py_data[init_line_idx + 1]
 
-    py_data.insert(init_line_idx + 1, '        # end typedef\n')
+    py_data.insert(init_line_idx + 1, '        # end typedef - DO NOT MANUALLY EDIT ABOVE\n')
     for elem in root.findall('.//widget'):
         # handle non customs
         if elem.get('class') not in custom_classes + ['QMainWindow']:
@@ -74,6 +74,6 @@ for ui_file, py_file in pairs:
                 init_line_idx + 1,
                 f"        self.{elem.get('name')}: {elem.get('class')}\n"
             )
-    py_data.insert(init_line_idx + 1, '        # start typedef\n')
+    py_data.insert(init_line_idx + 1, '        # start typedef - DO NOT MANUALLY EDIT BELOW\n')
     with open(py_file, 'w') as f:
         f.writelines(py_data)

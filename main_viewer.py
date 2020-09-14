@@ -1,8 +1,8 @@
-# start custom imports
+# start custom imports - DO NOT MANUALLY EDIT BELOW
 from cohorttreewidget import CohortTreeWidget
 from plotlistwidget import PlotListWidget
 from mplwidget import MplWidget
-# end custom imports
+# end custom imports - DO NOT MANUALLY EDIT ABOVE
 from cohorttreewidget import CohortTreeWidgetItem
 from plotlistwidget import PlotListWidgetItem
 import sys
@@ -26,7 +26,7 @@ from typing import Dict, Any
 class MainViewer(QtWidgets.QMainWindow):
 
     def __init__(self):
-        # start typedef
+        # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
         self.menuPlugins: QtWidgets.QMenu
         self.menuEdit: QtWidgets.QMenu
@@ -38,7 +38,7 @@ class MainViewer(QtWidgets.QMainWindow):
         self.label: QtWidgets.QLabel
         self.MplWidget: MplWidget
         self.centralwidget: QtWidgets.QWidget
-        # end typedef
+        # end typedef - DO NOT MANUALLY EDIT ABOVE
 
         super().__init__()
         # load ui elements into MainViewer class

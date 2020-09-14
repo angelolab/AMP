@@ -376,7 +376,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QTableView" name="eparamsTable"/>
+          <widget class="QTableWidget" name="eparamsTable"/>
          </item>
         </layout>
        </item>

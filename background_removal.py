@@ -1,5 +1,5 @@
-# start custom imports
-# end custom imports
+# start custom imports - DO NOT MANUALLY EDIT BELOW
+# end custom imports - DO NOT MANUALLY EDIT ABOVE
 from PyQt5 import QtWidgets, QtCore, uic
 
 from mplwidget import ImagePlot, Plot
@@ -20,7 +20,7 @@ import numbers
 class BackgroundRemoval(QtWidgets.QMainWindow):
 
     def __init__(self, main_viewer: MainViewer):
-        # start typedef
+        # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
         self.menubar: QtWidgets.QMenuBar
         self.runEvalCapVal: QtWidgets.QLabel
@@ -34,7 +34,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.runBackgroundButton: QtWidgets.QPushButton
         self.runLoadButton: QtWidgets.QPushButton
         self.runGroup: QtWidgets.QGroupBox
-        self.eparamsTable: QtWidgets.QTableView
+        self.eparamsTable: QtWidgets.QTableWidget
         self.eparamsEvalAllButton: QtWidgets.QPushButton
         self.eparamsEvalButton: QtWidgets.QPushButton
         self.eparamsEvalCapBox: QtWidgets.QDoubleSpinBox
@@ -67,7 +67,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.loadingAddButton: QtWidgets.QPushButton
         self.loadingGroup: QtWidgets.QGroupBox
         self.centralwidget: QtWidgets.QWidget
-        # end typedef
+        # end typedef - DO NOT MANUALLY EDIT ABOVE
 
         super().__init__()
 
@@ -92,16 +92,28 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.loadingPointsList.currentItemChanged.connect(self.on_point_change)
         self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
         self.loadingRemoveButton.clicked.connect(self.on_remove_point)
+
+        # background mask generation UI callbacks
         self.rparamsTestButton.clicked.connect(self.test_br_params)
-
-        # support arrow keys and clicking
-        self.rparamsTable.cellClicked.connect(self.br_cell_click)
-        self.rparamsTable.currentCellChanged.connect(self.br_cell_change)
-
         self.rparamsDeleteButton.clicked.connect(self.remove_br_params)
         self.rparamsReloadButton.clicked.connect(self.reload_br_params)
 
-        self.setWindowTitle("Background Removal")
+        # arrow key + click support for mask generation params table
+        self.rparamsTable.cellClicked.connect(self.br_cell_click)
+        self.rparamsTable.currentCellChanged.connect(self.br_cell_change)
+
+        # removal evaluation UI callbacks
+        self.eparamsPointSelect.currentTextChanged.connect(self.on_eparams_point_change)
+        # self.eparamsEvalButton.clicked.connect()
+        # self.eparamsEvalAllButton.clicked.connect()
+        # self.eparamsDeleteButton.clicked.connect()
+        # self.eparamsReloadButton.clicked.connect()
+
+        # arrow key + click support for removal evaluation params table
+        # self.eparamsTable.cellClicked.connect()
+        # self.eparamsTable.currentCellChanged.connect()
+
+        # self.setWindowTitle("Background Removal")
 
     # closeEvent is reserved by pyqt so it can't follow style guide :/
     def closeEvent(self, event: QtCore.QEvent) -> None:
@@ -128,7 +140,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         Returns:
             channel_data (numpy.ndarray): image data for given point's given channel
-
         """
 
         return self.points[point_name].get_channel_data(chans=[channel_name])[channel_name]
@@ -160,6 +171,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             ):
                 self.points[point_path] = Point(point_path, tifs)
                 self.loadingPointsList.addItem(point_path)
+                self.eparamsPointSelect.addItem(point_path)
 
     def _gen_preview_fig_name(self, point_name: str, channel_name: str) -> str:
         """Generates pretty figure names for preview images
@@ -201,10 +213,26 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
 
     def _add_update_figure(self, figure_id: Union[int, None], current_point: str, im_plot: Plot,
-                           mask_name: str,
-                           reuse_button: QtWidgets.QRadioButton = None) -> Union[int, None]:
-        """
+                           plot_name: str,
+                           reuse_button: QtWidgets.QRadioButton = None) -> int:
+        """Adds or updates a figure id with supplied plot object
 
+        Args:
+            figure_id (int):
+                Previous figure id.  If None, a new figure id will be retrieved from figure manager
+            current_point (str):
+                Key for current point in points dictionary
+            im_plot (mplwidget.Plot):
+                Image plot object for the new/updated figure
+            plot_name (str):
+                Name displayed in the plot list for the figure.
+            reuse_button (QtWidgets.QRadioButton | None):
+                Button which determines 'reuse' or updating behavior between different points.
+                If None, figures will be exclusively added w/o updating. Default is None.
+
+        Returns:
+            int:
+                New/updated figure id for generated figure.
         """
         is_checked = False
         if reuse_button is not None:
@@ -215,9 +243,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 for point in self.points.values():
                     point.safe_remove_figure_id(figure_id)
                 self.points[current_point].add_figure_id(figure_id)
-            self.main_viewer.figures.update_figure(figure_id, im_plot, mask_name)
+            self.main_viewer.figures.update_figure(figure_id, im_plot, plot_name)
         else:
-            figure_id = self.main_viewer.figures.add_figure(im_plot, mask_name)
+            figure_id = self.main_viewer.figures.add_figure(im_plot, plot_name)
             self.points[current_point].add_figure_id(figure_id)
         return figure_id
 
@@ -231,7 +259,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         Args:
             current: newly selected point
             previous: previously selected point
-
         """
 
         if current is None:
@@ -239,7 +266,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             self.loadingChannelSelect.clear()
             return
 
-        # set combo box
+        # set channels combo box
         comboChannel = self.loadingChannelSelect.currentText()
         self.loadingChannelSelect.clear()
         if comboChannel in self.points[current.text()].channels:
@@ -264,17 +291,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.preview_id = self._add_update_figure(self.preview_id, current.text(),
                                                   ImagePlot(channel_data), plot_name,
                                                   self.loadingReuseButton)
-
-        # swap br_reuse_id ownership if relevant
-        #           and self.points[current.text()].get_param('BR_params') is not None
-        # if(
-        #     self.br_reuse_id is not None
-        #     and self.rparamsReuseButton.isChecked()
-        # ):
-        #     print(previous.text())
-        #     self.points[previous.text()].remove_figure_id(self.br_reuse_id)
-        #     self.points[current.text()].add_figure_id(self.br_reuse_id)
-        #     # figure update happens in channel change call
 
         # refill rparamsTable
         while self.rparamsTable.rowCount() > 0:
@@ -301,7 +317,6 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         Args:
             current_text: current name of channel selected
-
         """
 
         if current_text and self.loadingPointsList.currentItem() is not None:
@@ -365,6 +380,10 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             # remove point from point list
             self.loadingPointsList.takeItem(
                 self.loadingPointsList.currentRow()
+            )
+
+            self.eparamsPointSelect.removeItem(
+                self.eparamsPointSelect.findText(current_point)
             )
 
         else:
@@ -596,6 +615,25 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                                                        mask_name, self.rparamsReuseButton)
 
             self.main_viewer.refresh_plots()
+
+    def on_eparams_point_change(self, current_text: str) -> None:
+        """Callback function for evaluation channel point reselection
+
+        Args:
+            current_text (str):
+                key for to points dictionary
+        """
+        if not current_text:
+            return
+
+        # refresh eparams channels
+        combo_channel = None
+        if self.eparamsChannelSelect.count() > 0:
+            combo_channel = self.eparamsChannelSelect.currentText()
+            self.eparamsChannelSelect.clear()
+        self.eparamsChannelSelect.addItems(self.points[current_text].channels)
+        if combo_channel is not None and combo_channel:
+            self.eparamsChannelSelect.setCurrentText(combo_channel)
 
 
 # function for amp plugin building
