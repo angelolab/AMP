@@ -8,6 +8,18 @@ from importlib import import_module
 
 
 def load_plugin(ui_file: str, main_viewer: QtWidgets.QMainWindow) -> QtWidgets.QMainWindow:
+    """Load plugin from file and return an instance
+
+    Args:
+        ui_file (str):
+            File path to plugin.  This must be a .py file.
+        main_viewer (QtWidgets.QMainWindow):
+            Main viewer instance.  Plugins need to contain a reference to the main viewer.
+
+    Returns:
+        QtWidgets.QMainWindow:
+            Plugin defined within ui_file
+    """
     imp_name = os.path.basename(ui_file).split('.')[0]
     plugin = import_module(imp_name)
     builder = getattr(plugin, 'build_as_plugin')

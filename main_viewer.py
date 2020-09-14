@@ -51,8 +51,6 @@ class MainViewer(QtWidgets.QMainWindow):
         self.executer = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         # connect UI callbacks
-        # TODO: find a good way to automatically determine the types for these
-        #       from .ui files
         self.PlotListWidget.itemChanged.connect(self.on_plot_item_change)
         self.PlotListWidget.currentItemChanged.connect(self.on_plot_list_change)
         self.CohortTreeWidget.itemClicked.connect(self.on_file_toggle)

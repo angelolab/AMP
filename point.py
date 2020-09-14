@@ -7,13 +7,29 @@ from typing import List, Union, Dict, Any
 from numbers import Number
 
 
-class Point(object):
+class Point:
+    """Class containing relevent information and methods for a managing points within AMP plugins
+
+    Raw point data is not handled by this class; rather this class manages file locations and
+    dynamically loads channel data when requested.
+
+    Atributes:
+        path (str):
+            path to folder of tifs for point
+        channels (List[str]):
+            file names for channels
+        figure_ids (List[int]):
+            figure id's for point related figures within figure_manager
+        params (Dict[str, Any]):
+            dictionary containing arbitrary algorithm inputs
+    """
+
     def __init__(self, path: str, channels: List[str]) -> None:
         self.path = path
         self.channels = channels
 
         self.figure_ids: List[int] = []
-        self.params: Dict[str, dict] = {}
+        self.params: Dict[str, Any] = {}
 
     def add_figure_id(self, id: int) -> None:
         self.figure_ids.append(id)
