@@ -105,7 +105,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # removal evaluation UI callbacks
         self.eparamsPointSelect.currentTextChanged.connect(self.on_eparams_point_change)
         self.eparamsEvalButton.clicked.connect(self.on_eval_click)
-        # self.eparamsEvalAllButton.clicked.connect()
+        self.eparamsEvalAllButton.clicked.connect(self.on_eval_all_click)
         # self.eparamsDeleteButton.clicked.connect()
         # self.eparamsReloadButton.clicked.connect()
 
@@ -731,6 +731,50 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # show after image as different plot
         processed_channel[processed_channel > eval_cap] = eval_cap
         self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
+
+    def on_eval_all_click(self) -> None:
+        """Callback function for evaluate all button.  Runs evaluation over all loaded points
+        """
+
+        # get fixed chanels
+        eval_channel = self.eparamsChannelSelect.currentText()
+        bg_channel = self.loadingChannelSelect.currentText()
+
+        # get relevant parameters
+        radius = self.rparamsGausRadiusBox.value()
+        threshold = self.rparamsThreshBox.value()
+        backcap = self.rparamsBackCapBox.value()
+        remove_value = self.eparamsRemoveBox.value()
+
+        eval_cap = self.eparamsEvalCapBox.value()
+
+        for index in range(self.eparamsPointSelect.count()):
+            eval_point = self.eparamsPointSelect.itemText(index)
+
+            before_name, after_name = \
+                self._gen_eval_fig_names(eval_point, eval_channel,
+                                         [radius, threshold, backcap, remove_value])
+
+            channel_data = self.points[eval_point].get_channel_data([eval_channel, bg_channel])
+
+            unprocessed_channel = np.copy(channel_data[eval_channel].astype('int'))
+            unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
+
+            # get preview image for before and plot
+            self._add_update_figure(None, eval_point, ImagePlot(unprocessed_channel), before_name)
+
+            processed_channel = self._evaluate_channel(
+                channel_data[bg_channel],
+                channel_data[eval_channel],
+                radius,
+                threshold,
+                backcap,
+                remove_value
+            )
+
+            # show after image as different plot
+            processed_channel[processed_channel > eval_cap] = eval_cap
+            self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
 
 
 # function for amp plugin building
