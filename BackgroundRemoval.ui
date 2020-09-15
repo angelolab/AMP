@@ -155,7 +155,7 @@
               <enum>QAbstractSpinBox::NoButtons</enum>
              </property>
              <property name="decimals">
-              <number>0</number>
+              <number>1</number>
              </property>
              <property name="value">
               <double>1.000000000000000</double>
@@ -329,7 +329,10 @@
                 <enum>QAbstractSpinBox::NoButtons</enum>
                </property>
                <property name="decimals">
-                <number>1</number>
+                <number>0</number>
+               </property>
+               <property name="value">
+                <double>2.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -353,7 +356,10 @@
                 <enum>QAbstractSpinBox::NoButtons</enum>
                </property>
                <property name="decimals">
-                <number>1</number>
+                <number>0</number>
+               </property>
+               <property name="value">
+                <double>10.000000000000000</double>
                </property>
               </widget>
              </item>

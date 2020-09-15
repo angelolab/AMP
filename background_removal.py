@@ -13,7 +13,7 @@ import os
 import pathlib
 import concurrent.futures
 
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any, Union, Tuple
 import numbers
 
 
@@ -211,6 +211,27 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
         return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
+
+    def _gen_eval_fig_names(self, point_name: str, eval_channel: str,
+                            params: List[numbers.Number]) -> Tuple[str, str]:
+        """Generates pretty figure names for before/after evaluation images
+
+        Args:
+            point_name (str):
+                Path like string to TIFs directory of FOV
+            eval_channel (str):
+                Name of channel (with or without .tif(f))
+            params (list):
+                Parameters used for mask generation
+
+        Returns:
+            Tuple[str, str]:
+                Before and after names for figures
+        """
+        reduced_point_name = pathlib.Path(point_name).parts[-2]
+        reduced_channel_name = eval_channel.split('.')[0]
+        return f"{reduced_point_name} - {reduced_channel_name} Before", \
+               f"{reduced_point_name} - {reduced_channel_name} After {params}"
 
     def _add_update_figure(self, figure_id: Union[int, None], current_point: str, im_plot: Plot,
                            plot_name: str,
@@ -623,6 +644,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             current_text (str):
                 key for to points dictionary
         """
+
         if not current_text:
             return
 
@@ -635,15 +657,57 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         if combo_channel is not None and combo_channel:
             self.eparamsChannelSelect.setCurrentText(combo_channel)
 
+    def _evaluate_channel(self, bg_channel: Any, eval_channel: Any, radius: float,
+                          threshold: float, backcap: int, remove_value: int) -> Any:
+        """Generate mask and subtract from evaluation channel where the mask is positive
+
+        Args:
+            bg_channel (numpy.ndarray):
+                Background channel data
+            eval_channel (numpy.ndarray):
+                Evaluation channel data
+            radius (float):
+                Radius of gaussian blur used in mask generation
+            threshold (float):
+                Threshold used in mask generation
+            backcap (int):
+                Background cap used in mask generation
+            remove_value (int):
+                Amount subtracted from evaluation channel
+
+        Returns:
+            numpy.ndarray:
+                Evaluation channel with pixels dimmed/removed in masked region
+        """
+
+        bg_mask = self._generate_mask(bg_channel, radius, threshold, backcap)
+
+        processed_channel = np.copy(eval_channel).astype('int')
+        processed_channel[bg_mask.astype('bool')] -= int(remove_value)
+        processed_channel[processed_channel < 0] = 0
+
+        return processed_channel
+
     def on_eval_click(self) -> None:
+        """Callback function for evaluation button
         """
-        """
+
         if not self.eparamsPointSelect.currentText():
             return
 
         eval_point = self.eparamsPointSelect.currentText()
         eval_channel = self.eparamsChannelSelect.currentText()
         bg_channel = self.loadingChannelSelect.currentText()
+
+        # get relevant parameters
+        radius = self.rparamsGausRadiusBox.value()
+        threshold = self.rparamsThreshBox.value()
+        backcap = self.rparamsBackCapBox.value()
+        remove_value = self.eparamsRemoveBox.value()
+
+        before_name, after_name = \
+            self._gen_eval_fig_names(eval_point, eval_channel,
+                                     [radius, threshold, backcap, remove_value])
 
         eval_cap = self.eparamsEvalCapBox.value()
 
@@ -653,25 +717,20 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
 
         # get preview image for before and plot
-        self._add_update_figure(None, eval_point, ImagePlot(unprocessed_channel), 'Before')
+        self._add_update_figure(None, eval_point, ImagePlot(unprocessed_channel), before_name)
 
-        # get mask_gen params and compute mask
-        radius = self.rparamsGausRadiusBox.value()
-        threshold = self.rparamsThreshBox.value()
-        backcap = self.rparamsBackCapBox.value()
-
-        bg_mask = self._generate_mask(channel_data[bg_channel], radius, threshold, backcap)
-
-        # get eval params and subtract mask from preview data
-        remove_values = self.eparamsRemoveBox.value()
-
-        processed_channel = np.copy(channel_data[eval_channel]).astype('int')
-        processed_channel[bg_mask.astype('bool')] -= int(remove_values)
-        processed_channel[processed_channel < 0] = 0
-        processed_channel[processed_channel > eval_cap] = int(eval_cap)
+        processed_channel = self._evaluate_channel(
+            channel_data[bg_channel],
+            channel_data[eval_channel],
+            radius,
+            threshold,
+            backcap,
+            remove_value
+        )
 
         # show after image as different plot
-        self._add_update_figure(None, eval_point, ImagePlot(processed_channel), 'After')
+        processed_channel[processed_channel > eval_cap] = eval_cap
+        self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
 
 
 # function for amp plugin building
