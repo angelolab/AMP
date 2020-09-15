@@ -104,7 +104,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         # removal evaluation UI callbacks
         self.eparamsPointSelect.currentTextChanged.connect(self.on_eparams_point_change)
-        # self.eparamsEvalButton.clicked.connect()
+        self.eparamsEvalButton.clicked.connect(self.on_eval_click)
         # self.eparamsEvalAllButton.clicked.connect()
         # self.eparamsDeleteButton.clicked.connect()
         # self.eparamsReloadButton.clicked.connect()
@@ -634,6 +634,44 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.eparamsChannelSelect.addItems(self.points[current_text].channels)
         if combo_channel is not None and combo_channel:
             self.eparamsChannelSelect.setCurrentText(combo_channel)
+
+    def on_eval_click(self) -> None:
+        """
+        """
+        if not self.eparamsPointSelect.currentText():
+            return
+
+        eval_point = self.eparamsPointSelect.currentText()
+        eval_channel = self.eparamsChannelSelect.currentText()
+        bg_channel = self.loadingChannelSelect.currentText()
+
+        eval_cap = self.eparamsEvalCapBox.value()
+
+        channel_data = self.points[eval_point].get_channel_data([eval_channel, bg_channel])
+
+        unprocessed_channel = np.copy(channel_data[eval_channel].astype('int'))
+        unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
+
+        # get preview image for before and plot
+        self._add_update_figure(None, eval_point, ImagePlot(unprocessed_channel), 'Before')
+
+        # get mask_gen params and compute mask
+        radius = self.rparamsGausRadiusBox.value()
+        threshold = self.rparamsThreshBox.value()
+        backcap = self.rparamsBackCapBox.value()
+
+        bg_mask = self._generate_mask(channel_data[bg_channel], radius, threshold, backcap)
+
+        # get eval params and subtract mask from preview data
+        remove_values = self.eparamsRemoveBox.value()
+
+        processed_channel = np.copy(channel_data[eval_channel]).astype('int')
+        processed_channel[bg_mask.astype('bool')] -= int(remove_values)
+        processed_channel[processed_channel < 0] = 0
+        processed_channel[processed_channel > eval_cap] = int(eval_cap)
+
+        # show after image as different plot
+        self._add_update_figure(None, eval_point, ImagePlot(processed_channel), 'After')
 
 
 # function for amp plugin building
