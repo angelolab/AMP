@@ -106,8 +106,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.eparamsPointSelect.currentTextChanged.connect(self.on_eparams_point_change)
         self.eparamsEvalButton.clicked.connect(self.on_eval_click)
         self.eparamsEvalAllButton.clicked.connect(self.on_eval_all_click)
-        # self.eparamsDeleteButton.clicked.connect()
-        # self.eparamsReloadButton.clicked.connect()
+        self.eparamsDeleteButton.clicked.connect(self.remove_ev_params)
+        self.eparamsReloadButton.clicked.connect(self.reload_ev_params)
 
         # arrow key + click support for removal evaluation params table
         # self.eparamsTable.cellClicked.connect()
@@ -395,6 +395,10 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             while self.rparamsTable.rowCount() > 0:
                 self.rparamsTable.removeRow(self.rparamsTable.rowCount()-1)
 
+            # clear eparamsTable entries
+            while self.eparamsTable.rowCount() > 0:
+                self.eparamsTable.removeRow(self.eparamsTable.rowCount() - 1)
+
             # directly remove the point from the dictionary
             del self.points[current_point]
 
@@ -563,7 +567,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         # adjust for mismatched cell_change call on param deletion
         current_point = self.loadingPointsList.currentItem().text()
-        num_br_params = len(self.points[current_point].get_param('BR_params'))
+        num_br_params = len(self.points[current_point].get_param('BR_params') or [])
 
         if new_row >= 0:
             self.br_cell_click(
@@ -588,57 +592,24 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             self.rparamsTable.removeRow(self.rparamsTable.currentRow())
 
     def reload_br_params(self) -> None:
-        """Callback for editing row of background reduction parameters
+        """Callback for filling param boxes with row of background reduction parameters
         """
 
         if self.rparamsTable.currentRow() >= 0:
+            current_row = self.rparamsTable.currentRow()
 
-            # get attributes
-            current_point = self.loadingPointsList.currentItem().text()
-            current_channel = self.loadingChannelSelect.currentText()
-            background_image = self._get_point_channel_data(current_point, current_channel)
-
-            # reload data at current row index from points
-            br_params = self.points[current_point].get_param('BR_params')
-
-            # get alg params
-            radius = self.rparamsGausRadiusBox.value()
-            threshold = self.rparamsThreshBox.value()
-            backcap = self.rparamsBackCapBox.value()
-
-            br_params[self.rparamsTable.currentRow()] = [radius, threshold, backcap]
-
-            self.rparamsTable.setItem(self.rparamsTable.currentRow(),
-                                      0,
-                                      QtWidgets.QTableWidgetItem(f'{radius}'))
-            self.rparamsTable.setItem(self.rparamsTable.currentRow(),
-                                      1,
-                                      QtWidgets.QTableWidgetItem(f'{threshold}'))
-            self.rparamsTable.setItem(self.rparamsTable.currentRow(),
-                                      2,
-                                      QtWidgets.QTableWidgetItem(f'{backcap}'))
-
-            # generate mask
-            background_mask = self._generate_mask(
-                background_image,
-                radius,
-                threshold,
-                backcap
+            self.rparamsGausRadiusBox.setValue(
+                float(self.rparamsTable.item(current_row, 0).text())
+            )
+            self.rparamsThreshBox.setValue(
+                float(self.rparamsTable.item(current_row, 1).text())
+            )
+            self.rparamsBackCapBox.setValue(
+                float(self.rparamsTable.item(current_row, 2).text())
             )
 
-            # generate plot object for mask and create figure
-            mask_name = \
-                self._gen_mask_fig_name(current_point, current_channel,
-                                        [radius, threshold, backcap])
-
-            im_plot = ImagePlot(background_mask)
-            self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
-                                                       mask_name, self.rparamsReuseButton)
-
-            self.main_viewer.refresh_plots()
-
     def on_eparams_point_change(self, current_text: str) -> None:
-        """Callback function for evaluation channel point reselection
+        """Callback function for evaluation point reselection
 
         Args:
             current_text (str):
@@ -656,6 +627,19 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.eparamsChannelSelect.addItems(self.points[current_text].channels)
         if combo_channel is not None and combo_channel:
             self.eparamsChannelSelect.setCurrentText(combo_channel)
+
+        # refresh eparams table
+        while self.eparamsTable.rowCount() > 0:
+            self.eparamsTable.removeRow(self.eparamsTable.rowCount()-1)
+        for ev_params in (self.points[current_text].get_param('EV_params') or []):
+            new_row = self.eparamsTable.rowCount()
+            self.eparamsTable.insertRow(new_row)
+            self.eparamsTable.setItem(new_row,
+                                      0,
+                                      QtWidgets.QTableWidgetItem(f'{ev_params[0]}'))
+            self.eparamsTable.setItem(new_row,
+                                      1,
+                                      QtWidgets.QTableWidgetItem(f'{ev_params[1]}'))
 
     def _evaluate_channel(self, bg_channel: Any, eval_channel: Any, radius: float,
                           threshold: float, backcap: int, remove_value: int) -> Any:
@@ -732,6 +716,22 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         processed_channel[processed_channel > eval_cap] = eval_cap
         self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
 
+        # get next row and add data to points for storage
+        new_row = self.eparamsTable.rowCount()
+        params = self.points[eval_point].get_param('EV_params')
+        params = list() if not params else params
+        params.append([remove_value, eval_cap])
+        self.points[eval_point].set_param('EV_params', params)
+
+        # add data to rparamsTable
+        self.eparamsTable.insertRow(new_row)
+        self.eparamsTable.setItem(new_row,
+                                  0,
+                                  QtWidgets.QTableWidgetItem(f'{remove_value}'))
+        self.eparamsTable.setItem(new_row,
+                                  1,
+                                  QtWidgets.QTableWidgetItem(f'{eval_cap}'))
+
     def on_eval_all_click(self) -> None:
         """Callback function for evaluate all button.  Runs evaluation over all loaded points
         """
@@ -775,6 +775,50 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             # show after image as different plot
             processed_channel[processed_channel > eval_cap] = eval_cap
             self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
+
+            new_row = self.eparamsTable.rowCount()
+            params = self.points[eval_point].get_param('EV_params')
+            params = list() if not params else params
+            params.append([remove_value, eval_cap])
+            self.points[eval_point].set_param('EV_params', params)
+
+            # add data to rparamsTable
+            self.eparamsTable.insertRow(new_row)
+            self.eparamsTable.setItem(new_row,
+                                      0,
+                                      QtWidgets.QTableWidgetItem(f'{remove_value}'))
+            self.eparamsTable.setItem(new_row,
+                                      1,
+                                      QtWidgets.QTableWidgetItem(f'{eval_cap}'))
+
+    def remove_ev_params(self) -> None:
+        """Callback for delete eval parameter button
+        """
+
+        if self.eparamsTable.currentRow() >= 0:
+            current_row = self.eparamsTable.currentRow()
+            current_point = self.eparamsPointSelect.currentText()
+
+            # delete data from points
+            ev_params = self.points[current_point].get_param('EV_params')
+            del ev_params[current_row]
+
+            # remove row from column
+            self.eparamsTable.removeRow(current_row)
+
+    def reload_ev_params(self) -> None:
+        """Callback for reloading eval params into the boxes
+        """
+
+        if self.eparamsTable.currentRow() >= 0:
+            current_row = self.eparamsTable.currentRow()
+
+            self.eparamsRemoveBox.setValue(
+                float(self.eparamsTable.item(current_row, 0).text())
+            )
+            self.eparamsEvalCapBox.setValue(
+                float(self.eparamsTable.item(current_row, 1).text())
+            )
 
 
 # function for amp plugin building

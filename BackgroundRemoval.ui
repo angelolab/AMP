@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>435</width>
-    <height>837</height>
+    <width>436</width>
+    <height>847</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -382,7 +382,24 @@
           </layout>
          </item>
          <item>
-          <widget class="QTableWidget" name="eparamsTable"/>
+          <widget class="QTableWidget" name="eparamsTable">
+           <property name="columnCount">
+            <number>2</number>
+           </property>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>rm val</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>eval cap</string>
+            </property>
+           </column>
+          </widget>
          </item>
         </layout>
        </item>
@@ -567,7 +584,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>435</width>
+     <width>436</width>
      <height>22</height>
     </rect>
    </property>
