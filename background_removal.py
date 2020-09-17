@@ -24,6 +24,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.statusbar: QtWidgets.QStatusBar
         self.menubar: QtWidgets.QMenuBar
         self.runEvalCapVal: QtWidgets.QLabel
+        self.label_9: QtWidgets.QLabel
+        self.runRemoveVal: QtWidgets.QLabel
         self.label_14: QtWidgets.QLabel
         self.runBackCapVal: QtWidgets.QLabel
         self.label_12: QtWidgets.QLabel
@@ -113,7 +115,10 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # self.eparamsTable.cellClicked.connect()
         # self.eparamsTable.currentCellChanged.connect()
 
-        # self.setWindowTitle("Background Removal")
+        self.runLoadButton.clicked.connect(self.on_load_params)
+        self.runBackgroundButton.clicked.connect(self.on_run_background)
+
+        self.setWindowTitle("Background Removal")
 
     # closeEvent is reserved by pyqt so it can't follow style guide :/
     def closeEvent(self, event: QtCore.QEvent) -> None:
@@ -819,6 +824,34 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             self.eparamsEvalCapBox.setValue(
                 float(self.eparamsTable.item(current_row, 1).text())
             )
+
+    def on_load_params(self) -> None:
+        """
+        """
+
+        self.runGausRadiusVal.setText(self.rparamsGausRadiusBox.text())
+        self.runThreshVal.setText(self.rparamsThreshBox.text())
+        self.runBackCapVal.setText(self.rparamsBackCapBox.text())
+        self.runRemoveVal.setText(self.eparamsRemoveBox.text())
+        self.runEvalCapVal.setText(self.eparamsEvalCapBox.text())
+
+        self.runBackgroundButton.setEnabled(True)
+
+    def on_run_background(self) -> None:
+        """
+        """
+
+        # loop over all loaded points
+
+        # create directory structure as needed
+
+        # compute background mask
+
+        # loop over channels and remove bg
+
+        # write log file out
+
+        return
 
 
 # function for amp plugin building

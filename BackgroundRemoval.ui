@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>436</width>
-    <height>847</height>
+    <width>435</width>
+    <height>863</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -543,7 +543,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <widget class="QLabel" name="label_14">
            <property name="text">
             <string>Evaluation Cap :</string>
@@ -554,7 +554,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QLabel" name="runEvalCapVal">
+          <widget class="QLabel" name="runRemoveVal">
            <property name="font">
             <font>
              <italic>false</italic>
@@ -564,6 +564,23 @@
            <property name="autoFillBackground">
             <bool>false</bool>
            </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(13, 114, 255);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>Remove Value</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLabel" name="runEvalCapVal">
            <property name="styleSheet">
             <string notr="true">color: rgb(13, 114, 255);</string>
            </property>
@@ -584,7 +601,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>436</width>
+     <width>435</width>
      <height>22</height>
     </rect>
    </property>
