@@ -1,15 +1,28 @@
 import os
 
+from PyQt5 import QtWidgets
+
 from importlib import import_module
 
 # tools for loading amp plugins
-# TODO: Reimplement to build plugin from a *.py file
 
 
-def load_plugin(ui_file, main_viewer):
+def load_plugin(ui_file: str, main_viewer: QtWidgets.QMainWindow) -> QtWidgets.QMainWindow:
+    """Load plugin from file and return an instance
+
+    Args:
+        ui_file (str):
+            File path to plugin.  This must be a .py file.
+        main_viewer (QtWidgets.QMainWindow):
+            Main viewer instance.  Plugins need to contain a reference to the main viewer.
+
+    Returns:
+        QtWidgets.QMainWindow:
+            Plugin defined within ui_file
+    """
     imp_name = os.path.basename(ui_file).split('.')[0]
     plugin = import_module(imp_name)
-    builder = getattr(plugin, 'buildAsPlugin')
+    builder = getattr(plugin, 'build_as_plugin')
     return builder(main_viewer)
 
 

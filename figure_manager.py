@@ -1,20 +1,47 @@
 from collections import deque
+from mplwidget import Plot
+from plotlistwidget import PlotListWidget
+from typing import List, Union, Dict
 
 # prefilling dictionary prevents slow rehashing
 MAX_FIGS = 64
 
 
 class FigureManager(object):
-    def __init__(self, plot_list):
-        self.figure_map = dict.fromkeys(range((MAX_FIGS * 3) // 2))
+    def __init__(self, plot_list: PlotListWidget) -> None:
+        self.figure_map: Dict[int, Union[Plot, None]] = dict.fromkeys(range((MAX_FIGS * 3) // 2))
+
         self.open_slots = deque([0])
 
         self.plot_list = plot_list
 
-    def get_figure(self, index):
+    def get_figure(self, index: int) -> Plot:
+        """Get plotting data for figure at given index
+
+        Args:
+            index (int):
+                Figure index
+
+        Returns:
+            mplwidget.Plot:
+                Plotting data at given index
+        """
         return self.figure_map[index]
 
-    def add_figure(self, plot_object):
+    def add_figure(self, plot_object: Plot, name: Union[str, None] = None) -> int:
+        """Add new figure to figure manager
+
+        Args:
+            plot_object (mplwidget.Plot):
+                New plotting data
+            name (str or None):
+                Name passed to the Main Viewer's plot list.  If None, the plot list will list it
+                as f'Figure {index}'. Default is None.
+
+        Returns:
+            int:
+                Index of new figure
+        """
 
         condition = len(self.open_slots) == 1
 
@@ -30,27 +57,55 @@ class FigureManager(object):
         self.figure_map[index] = plot_object
         self.open_slots[0] += int(condition)
 
-        name = f'Figure {index}'
+        if name is None:
+            name = f'Figure {index}'
 
-        self.plot_list.addItem(
+        self.plot_list.add_item(
             name,
             plot_object,
             index
         )
 
-        row = self.plot_list.getItemRowByPath(index)
+        row = self.plot_list.get_item_row_by_path(index)
         self.plot_list.setCurrentRow(row)
 
         return index
 
-    def update_figure(self, index, new_plot):
+    def update_figure(self, index: int, new_plot: Plot, name: Union[str, None] = None) -> None:
+        """Update figure at given index with new plotting data
+
+        Args:
+            index (int):
+                Figure index to update
+            new_plot (mplwidget.Plot):
+                New plotting data
+            name (str or None):
+                Updated name passed to the Main Viewer's plot list.  If None, the plot list name
+                will not be updated.  Default is None.
+
+        Returns:
+            None
+        """
         del self.figure_map[index]
         self.figure_map[index] = new_plot
 
-        row = self.plot_list.getItemRowByPath(index)
+        row = self.plot_list.get_item_row_by_path(index)
         self.plot_list.item(row).plot = new_plot
+        if name is not None:
+            self.plot_list.item(row).setText(name)
 
-    def remove_figure(self, index):
+    # TODO: Failing to remove figure or recomputing queue should explicitly throw error or warning
+    def remove_figure(self, index: int) -> bool:
+        """Remove figure from manager
+
+        Args:
+            index (int):
+                Figure index to remove
+
+        Returns:
+            bool:
+                true on successful removal, otherwise false
+        """
 
         if not self.figure_map[index]:
             print(f'There is no figure to remove at index {index}...')
@@ -73,12 +128,22 @@ class FigureManager(object):
 
         self._trim_queue()
 
-        row = self.plot_list.getItemRowByPath(index)
-        self.plot_list.deleteItem(row)
+        row = self.plot_list.get_item_row_by_path(index)
+        self.plot_list.delete_item(row)
 
         return True
 
-    def remove_figures(self, indicies=None):
+    def remove_figures(self, indicies: Union[List[int], None] = None) -> bool:
+        """Iteratively remove multiple figures
+
+        Args:
+            indicies (List[int]):
+                indices of figures to remove
+
+        Returns:
+            bool:
+                true on all successful removals, otherwise false
+        """
         return all([self.remove_figure(index) for index in indicies])
 
     def _trim_queue(self):

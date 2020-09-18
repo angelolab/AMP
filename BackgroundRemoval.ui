@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>435</width>
-    <height>838</height>
+    <height>863</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,6 +57,19 @@
        </item>
        <item>
         <widget class="QListWidget" name="loadingPointsList"/>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="loadingReuseButton">
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>Reuse Figure(s)</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -142,7 +155,7 @@
               <enum>QAbstractSpinBox::NoButtons</enum>
              </property>
              <property name="decimals">
-              <number>0</number>
+              <number>1</number>
              </property>
              <property name="value">
               <double>1.000000000000000</double>
@@ -152,17 +165,31 @@
           </layout>
          </item>
          <item>
-          <widget class="QPushButton" name="rparamsTestButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Test</string>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QPushButton" name="rparamsTestButton">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Test</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="rparamsReuseButton">
+             <property name="text">
+              <string>Reuse Figure(s)</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -302,7 +329,10 @@
                 <enum>QAbstractSpinBox::NoButtons</enum>
                </property>
                <property name="decimals">
-                <number>1</number>
+                <number>0</number>
+               </property>
+               <property name="value">
+                <double>2.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -326,7 +356,10 @@
                 <enum>QAbstractSpinBox::NoButtons</enum>
                </property>
                <property name="decimals">
-                <number>1</number>
+                <number>0</number>
+               </property>
+               <property name="value">
+                <double>10.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -349,7 +382,24 @@
           </layout>
          </item>
          <item>
-          <widget class="QTableView" name="eparamsTable"/>
+          <widget class="QTableWidget" name="eparamsTable">
+           <property name="columnCount">
+            <number>2</number>
+           </property>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>rm val</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>eval cap</string>
+            </property>
+           </column>
+          </widget>
          </item>
         </layout>
        </item>
@@ -493,7 +543,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <widget class="QLabel" name="label_14">
            <property name="text">
             <string>Evaluation Cap :</string>
@@ -504,7 +554,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QLabel" name="runEvalCapVal">
+          <widget class="QLabel" name="runRemoveVal">
            <property name="font">
             <font>
              <italic>false</italic>
@@ -514,6 +564,23 @@
            <property name="autoFillBackground">
             <bool>false</bool>
            </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(13, 114, 255);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>Remove Value</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLabel" name="runEvalCapVal">
            <property name="styleSheet">
             <string notr="true">color: rgb(13, 114, 255);</string>
            </property>
