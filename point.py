@@ -35,21 +35,21 @@ class Point:
 
     def add_figure_id(self, id: int) -> None:
         self.figure_ids.append(id)
-        # print(f'{self.path}\nAfter add {self.figure_ids}\n')
 
     def remove_figure_id(self, id: int) -> None:
         self.figure_ids.remove(id)
-        # print(f'{self.path}\nAfter remove {self.figure_ids}\n')
 
     def safe_remove_figure_id(self, id: int) -> None:
         try:
             self.figure_ids.remove(id)
-            # print(f'{self.path}\nAfter SAFE remove {self.figure_ids}\n')
         except ValueError:
             return
 
     def get_channel_names(self) -> List[str]:
         return [chan.split('.')[0] for chan in self.channels]
+
+    def get_point_dir(self) -> str:
+        return pathlib.Path(self.tif_path).parents[0]
 
     def get_parent_dir(self) -> str:
         return pathlib.Path(self.tif_path).parents[1]

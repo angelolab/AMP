@@ -7,6 +7,9 @@ import importlib
 
 # utility script for parsing .ui files for type information
 
+# !! Be extra careful when making changes here! This directly writes into background_removal.py
+# !! and main_viewer.py
+
 # collect ui files
 ui_files = [file for file in os.listdir() if file.endswith('.ui')]
 

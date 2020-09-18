@@ -711,7 +711,19 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
     def _evaluate_channel_with_mask(self, bg_mask: Any, eval_channel: Any,
                                     remove_value: int) -> Any:
-        """
+        """Subtract mask from evaluation channel where mask is positive
+
+        Args:
+            bg_mask (numpy.ndarray):
+                Binarized background channel mask
+            eval_channel (numpy.ndarray):
+                Evaluation channel data
+            remove_value (int):
+                Amount subtracted from evaluation channel
+
+        Returns:
+            numpy.ndarray:
+                Evaluation channel with pixels dimmed/removed in masked region
         """
 
         processed_channel = np.copy(eval_channel).astype('int')
@@ -869,7 +881,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             )
 
     def on_load_params(self) -> None:
-        """
+        """Load parameters used for full background subtraction run
         """
 
         self.loaded_params = {
@@ -889,10 +901,27 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         self.runBackgroundButton.setEnabled(True)
 
     def on_run_background(self) -> None:
-        """
+        """Run full background subtraction on all loaded points/channels
         """
 
+        logfile_txt = ""
+
+        bg_channel_name = self.loadingChannelSelect.currentText()
+        logfile_txt += f'background channel: {bg_channel_name}\n'
+
+        for param_name, param_value in zip(self.loaded_params.keys(), self.loaded_params.values()):
+            logfile_txt += f'{param_name}: {param_value}\n'
+
+        logfile_txt += '\n'
+
         timestamp = datetime.now().strftime("%b_%d_%y__%H_%M_%S")
+
+        # just to bound extracted_folder
+        extracted_folder = os.path.join(
+            list(self.points.values())[0].get_top_dir(),
+            f'no_background_{timestamp}'
+        )
+
         # loop over all loaded points
         for point in self.points.values():
             top_dir = point.get_top_dir()
@@ -900,7 +929,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             tif_folder = os.path.join(extracted_folder, point.name, 'TIFs')
             pathlib.Path(tif_folder).mkdir(parents=True, exist_ok=True)
 
-            bg_channel_name = self.loadingChannelSelect.currentText()
+            logfile_txt += f'{point.get_point_dir()}\n'
+
             bg_channel_data = self._get_point_channel_data(point.name, bg_channel_name)
 
             mask = self._generate_mask(bg_channel_data, self.loaded_params['radius'],
@@ -921,8 +951,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 )
 
         # write log file out
-
-        return
+        with open(os.path.join(extracted_folder, f'{timestamp}.log'), 'w') as f:
+            f.write(logfile_txt)
 
 
 # function for amp plugin building
