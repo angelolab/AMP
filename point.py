@@ -24,8 +24,9 @@ class Point:
             dictionary containing arbitrary algorithm inputs
     """
 
-    def __init__(self, path: str, channels: List[str]) -> None:
-        self.path = path
+    def __init__(self, name: str, tif_path: str, channels: List[str]) -> None:
+        self.name = name
+        self.tif_path = tif_path
         self.channels = channels
 
         self.figure_ids: List[int] = []
@@ -46,6 +47,9 @@ class Point:
         except ValueError:
             return
 
+    def get_channel_names(self) -> List[str]:
+        return [chan.split('.')[0] for chan in self.channels]
+
     def set_param(self, name: str, data: List[List[Number]]) -> None:
         self.params[name] = data
 
@@ -62,13 +66,22 @@ class Point:
                          chans: Union[List[str], None] = None) -> Union[Dict[str, Any], None]:
         if chans is None:
             chans = self.channels
-        elif not all(chan in self.channels for chan in chans):
+
+        # extension agnostic
+        chans_filtered = []
+        for chan in chans:
+            for channel in self.channels:
+                if chan == channel.split('.')[0] or chan == channel:
+                    chans_filtered.append(channel)
+                    break
+
+        if not all(chan in self.channels for chan in chans_filtered):
             print(f'Some channels in, {chans}, could not be located')
             return
 
         data_out: Dict[str, Any] = {}
-        for chan in chans:
-            full_path = os.path.join(self.path, chan)
-            data_out[chan] = np.asarray(Image.open(full_path))
+        for chan_name, chan_path in zip(chans, chans_filtered):
+            full_path = os.path.join(self.tif_path, chan_path)
+            data_out[chan_name] = np.asarray(Image.open(full_path))
 
         return data_out

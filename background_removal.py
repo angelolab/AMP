@@ -155,28 +155,62 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         Checks for point existence and adds it to loadingPointsList
         """
 
-        point_path = QtWidgets.QFileDialog.getExistingDirectory(self,
-                                                                'Open',
-                                                                '~')
-        # scan directory for tifs and build channel select
-        if point_path:
-            tifs = os.listdir(point_path)
+        # point_path = QtWidgets.QFileDialog.getExistingDirectory(self,
+        #                                                         'Open',
+        #                                                         '~')
+
+        # alter file_dialog to make it possible to select multiple directories
+        paths = []
+
+        file_dialog = QtWidgets.QFileDialog()
+        file_dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+        file_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
+        file_view = file_dialog.findChild(QtWidgets.QListView, 'listView')
+
+        if file_view:
+            file_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        f_tree_view = file_dialog.findChild(QtWidgets.QTreeView)
+        if f_tree_view:
+            f_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+
+        if file_dialog.exec():
+            paths = file_dialog.selectedFiles()
+
+        # iterate over selected points
+        for point in paths:
+            point_name = pathlib.Path(point).name
+            print(f'{point_name}: {point}')
+
+            # find tif subdir (allow only one extra tif depth)
+            tif_subdir = None
+            for subdir in os.listdir(point):
+                subdir_path = os.path.join(point, subdir)
+                if (
+                    os.path.isdir(subdir_path)
+                    and any(['.tif' in f for f in os.listdir(subdir_path)])
+                ):
+                    tif_subdir = subdir_path
+                    break
+
+            if tif_subdir is None:
+                print(f'{point_name} didn\'t contain any TIF subdirectories')
+                continue
+
+            tifs = os.listdir(tif_subdir)
             tifs = [tif
                     for tif in tifs
                     if tif.split('.')[-1] in ['tif', 'tiff']]
 
-            # add point to point container if it qualifies
-            # this syntax is confusing... :/
             if (
                 tifs
                 and not self.loadingPointsList.findItems(
-                    point_path,
+                    point,
                     QtCore.Qt.MatchExactly
                 )
             ):
-                self.points[point_path] = Point(point_path, tifs)
-                self.loadingPointsList.addItem(point_path)
-                self.eparamsPointSelect.addItem(point_path)
+                self.points[point_name] = Point(point_name, tif_subdir, tifs)
+                self.loadingPointsList.addItem(point_name)
+                self.eparamsPointSelect.addItem(point_name)
 
     def _gen_preview_fig_name(self, point_name: str, channel_name: str) -> str:
         """Generates pretty figure names for preview images
@@ -192,9 +226,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 Pretty figure name for background image
         """
 
-        reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
-        return f"{reduced_point_name} channel {reduced_channel_name}"
+        return f"{point_name} channel {reduced_channel_name}"
 
     def _gen_mask_fig_name(self, point_name: str, channel_name: str,
                            br_params: List[numbers.Number]) -> str:
@@ -213,9 +246,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 Pretty figure name for background mask image
         """
 
-        reduced_point_name = pathlib.Path(point_name).parts[-2]
         reduced_channel_name = channel_name.split('.')[0]
-        return f"{reduced_point_name} channel {reduced_channel_name} mask {br_params}"
+        return f"{point_name} channel {reduced_channel_name} mask {br_params}"
 
     def _gen_eval_fig_names(self, point_name: str, eval_channel: str,
                             params: List[numbers.Number]) -> Tuple[str, str]:
@@ -233,10 +265,10 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             Tuple[str, str]:
                 Before and after names for figures
         """
-        reduced_point_name = pathlib.Path(point_name).parts[-2]
+
         reduced_channel_name = eval_channel.split('.')[0]
-        return f"{reduced_point_name} - {reduced_channel_name} Before", \
-               f"{reduced_point_name} - {reduced_channel_name} After {params}"
+        return f"{point_name} - {reduced_channel_name} Before", \
+               f"{point_name} - {reduced_channel_name} After {params}"
 
     def _add_update_figure(self, figure_id: Union[int, None], current_point: str, im_plot: Plot,
                            plot_name: str,
@@ -295,16 +327,16 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # set channels combo box
         comboChannel = self.loadingChannelSelect.currentText()
         self.loadingChannelSelect.clear()
-        if comboChannel in self.points[current.text()].channels:
+        if comboChannel in self.points[current.text()].get_channel_names():
             self.loadingChannelSelect.addItem(comboChannel)
             self.loadingChannelSelect.addItems(
                 [channel
-                 for channel in self.points[current.text()].channels
+                 for channel in self.points[current.text()].get_channel_names()
                  if channel != comboChannel]
             )
         else:
             self.loadingChannelSelect.addItems(
-                self.points[current.text()].channels
+                self.points[current.text()].get_channel_names()
             )
 
         # gen/update plots
@@ -629,7 +661,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         if self.eparamsChannelSelect.count() > 0:
             combo_channel = self.eparamsChannelSelect.currentText()
             self.eparamsChannelSelect.clear()
-        self.eparamsChannelSelect.addItems(self.points[current_text].channels)
+        self.eparamsChannelSelect.addItems(self.points[current_text].get_channel_names())
         if combo_channel is not None and combo_channel:
             self.eparamsChannelSelect.setCurrentText(combo_channel)
 
