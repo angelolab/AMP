@@ -8,10 +8,12 @@ from main_viewer import MainViewer
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
+from PIL import Image
 
 import os
 import pathlib
 import concurrent.futures
+from datetime import datetime
 
 from typing import Dict, List, Any, Union, Tuple
 import numbers
@@ -117,6 +119,8 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         self.runLoadButton.clicked.connect(self.on_load_params)
         self.runBackgroundButton.clicked.connect(self.on_run_background)
+
+        self.loaded_params = {}
 
         self.setWindowTitle("Background Removal")
 
@@ -703,6 +707,13 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         bg_mask = self._generate_mask(bg_channel, radius, threshold, backcap)
 
+        return self._evaluate_channel_with_mask(bg_mask, eval_channel, remove_value)
+
+    def _evaluate_channel_with_mask(self, bg_mask: Any, eval_channel: Any,
+                                    remove_value: int) -> Any:
+        """
+        """
+
         processed_channel = np.copy(eval_channel).astype('int')
         processed_channel[bg_mask.astype('bool')] -= int(remove_value)
         processed_channel[processed_channel < 0] = 0
@@ -861,6 +872,14 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """
         """
 
+        self.loaded_params = {
+            'radius': self.rparamsGausRadiusBox.value(),
+            'threshold': self.rparamsThreshBox.value(),
+            'backcap': self.rparamsBackCapBox.value(),
+            'remove': self.eparamsRemoveBox.value(),
+            'evalcap': self.eparamsEvalCapBox.value(),
+        }
+
         self.runGausRadiusVal.setText(self.rparamsGausRadiusBox.text())
         self.runThreshVal.setText(self.rparamsThreshBox.text())
         self.runBackCapVal.setText(self.rparamsBackCapBox.text())
@@ -873,13 +892,33 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """
         """
 
+        timestamp = datetime.now().strftime("%b_%d_%y__%H_%M_%S")
         # loop over all loaded points
+        for point in self.points.values():
+            top_dir = point.get_top_dir()
+            extracted_folder = os.path.join(top_dir, f'no_background_{timestamp}')
+            tif_folder = os.path.join(extracted_folder, point.name, 'TIFs')
+            pathlib.Path(tif_folder).mkdir(parents=True, exist_ok=True)
 
-        # create directory structure as needed
+            bg_channel_name = self.loadingChannelSelect.currentText()
+            bg_channel_data = self._get_point_channel_data(point.name, bg_channel_name)
 
-        # compute background mask
+            mask = self._generate_mask(bg_channel_data, self.loaded_params['radius'],
+                                       self.loaded_params['threshold'],
+                                       self.loaded_params['backcap'])
 
-        # loop over channels and remove bg
+            for ev_channel_name in point.get_channel_names():
+                ev_channel_data = self._get_point_channel_data(point.name, ev_channel_name)
+
+                processed_channel_data = self._evaluate_channel_with_mask(
+                    mask,
+                    ev_channel_data,
+                    self.loaded_params['remove']
+                )
+
+                Image.fromarray(processed_channel_data.astype(np.uint8)).save(
+                    os.path.join(tif_folder, f'{ev_channel_name}.tif')
+                )
 
         # write log file out
 

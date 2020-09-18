@@ -2,6 +2,7 @@ import os
 
 from PIL import Image
 import numpy as np
+import pathlib
 
 from typing import List, Union, Dict, Any
 from numbers import Number
@@ -49,6 +50,12 @@ class Point:
 
     def get_channel_names(self) -> List[str]:
         return [chan.split('.')[0] for chan in self.channels]
+
+    def get_parent_dir(self) -> str:
+        return pathlib.Path(self.tif_path).parents[1]
+
+    def get_top_dir(self) -> str:
+        return pathlib.Path(self.tif_path).parents[2]
 
     def set_param(self, name: str, data: List[List[Number]]) -> None:
         self.params[name] = data
