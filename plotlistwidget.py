@@ -5,17 +5,19 @@ from mplwidget import Plot
 
 import sip
 
-from typing import Dict
+from typing import Dict, Callable
 
 # Handles storing plotting data in Qt List
 
 
 class PlotListWidgetItem(QtWidgets.QListWidgetItem):
-    def __init__(self, text: str = None, plot: Plot = None, path: str = None) -> None:
+    def __init__(self, text: str = None, plot: Plot = None, path: str = None,
+                 delete_callback: Callable[...] = None) -> None:
         super().__init__(text)
         self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
         self.plot = plot
         self.path = path
+        self.delete_callback = delete_callback
 
     def refresh(self, canvas: FigureCanvas):
         self.plot.plot_update(canvas, self.plot.plot_data)
@@ -26,8 +28,10 @@ class PlotListWidget(QtWidgets.QListWidget):
         super().__init__(parent)
         self.path_to_name: Dict[str, str] = {}
 
-    def add_item(self, name: str, plot: Plot, path: str) -> None:
-        super().addItem(PlotListWidgetItem(name, plot, path))
+    def add_item(self, name: str, plot: Plot, path: str,
+                 delete_callback: Callable[...] = None) -> None:
+
+        super().addItem(PlotListWidgetItem(name, plot, path, delete_callback))
         self.path_to_name[path] = name
 
     # path is a static breadcumb trail to allow for renaming.
@@ -43,6 +47,9 @@ class PlotListWidget(QtWidgets.QListWidget):
 
     # clear entry in path to name dictionary and delete
     def delete_item(self, row: int) -> None:
+        if self.item(row).delete_callback is not None:
+            self.item(row).delete_callback()
+
         self.path_to_name.pop(self.item(row).path, None)
         sip.delete(self.takeItem(row))
 

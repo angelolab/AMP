@@ -34,6 +34,8 @@ class MainViewer(QtWidgets.QMainWindow):
         self.menubar: QtWidgets.QMenuBar
         self.CohortTreeWidget: CohortTreeWidget
         self.label_2: QtWidgets.QLabel
+        self.deleteButton: QtWidgets.QPushButton
+        self.breakoutButton: QtWidgets.QPushButton
         self.PlotListWidget: PlotListWidget
         self.label: QtWidgets.QLabel
         self.MplWidget: MplWidget
