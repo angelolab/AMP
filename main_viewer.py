@@ -59,9 +59,13 @@ class MainViewer(QtWidgets.QMainWindow):
         self.actionOpen_Cohort.triggered.connect(self.load_cohort)
         self.actionAdd_Plugins.triggered.connect(self.add_plugin)
         self.deleteButton.clicked.connect(self.delete_plot_item)
+        self.breakoutButton.clicked.connect(self.breakout_plot)
 
         # configure figure manager
         self.figures = FigureManager(self.PlotListWidget)
+
+        # breakout figure windows are mapped path -> window
+        self.breakout_windows = {}
 
         self.setWindowTitle("Main Viewer")
 
@@ -128,6 +132,7 @@ class MainViewer(QtWidgets.QMainWindow):
         data has been written to an existing PlotListItem
 
         """
+        # TODO: Figure out what the current plot is, so a proper canvas can be passed
         self.executer.submit(
             self.PlotListWidget.refresh_current_plot,
             self.MplWidget._canvas
@@ -206,7 +211,6 @@ class MainViewer(QtWidgets.QMainWindow):
                 ui_name,
                 self.create_plugin_callback(ui_name))
 
-    # TODO: Write this function
     def delete_plot_item(self) -> None:
         """ Callback for removing a PlotListWidgetItem
         """
@@ -215,6 +219,34 @@ class MainViewer(QtWidgets.QMainWindow):
 
         # delete it
         self.PlotListWidget.delete_item(current_row)
+
+    def breakout_plot(self) -> None:
+        """ Callback for breaking a plot out into a separate window.
+        """
+        # get current selected plotlistwidgetitem
+        current_selected = self.PlotListWidget.currentItem()
+        current_nonhidden = self.PlotListWidget.count() - len(self.breakout_windows)
+
+        if current_selected is None:
+            return
+
+        selected_path = current_selected.path
+
+        # create new figure window referencing plotlistwidgetitem
+        # TODO: Create generic breakout plot window
+        self.breakout_windows[selected_path] = ""
+
+        # hide current plotlistwidgetitem
+        current_selected.setHidden(True)
+
+        # change current selection
+        if current_nonhidden <= 1:
+            self.PlotListWidget.setCurrentRow(-1)
+        else:
+            for i in range(self.PlotListWidget.count()):
+                if not self.PlotListWidget.item(i).isHidden():
+                    self.PlotListWidget.setCurrentRow(i)
+                    break
 
 
 # start application
