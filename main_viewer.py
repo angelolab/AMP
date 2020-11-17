@@ -58,6 +58,7 @@ class MainViewer(QtWidgets.QMainWindow):
         self.CohortTreeWidget.itemClicked.connect(self.on_file_toggle)
         self.actionOpen_Cohort.triggered.connect(self.load_cohort)
         self.actionAdd_Plugins.triggered.connect(self.add_plugin)
+        self.deleteButton.clicked.connect(self.delete_plot_item)
 
         # configure figure manager
         self.figures = FigureManager(self.PlotListWidget)
@@ -199,6 +200,13 @@ class MainViewer(QtWidgets.QMainWindow):
             self.menuPlugins.addAction(
                 ui_name,
                 self.create_plugin_callback(ui_name))
+
+    # TODO: Write this function
+    def delete_plot_item(self) -> None:
+        """
+        """
+
+        pass
 
 
 # start application

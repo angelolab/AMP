@@ -296,6 +296,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             int:
                 New/updated figure id for generated figure.
         """
+
         is_checked = False
         if reuse_button is not None:
             is_checked = reuse_button.isChecked()
@@ -307,9 +308,27 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 self.points[current_point].add_figure_id(figure_id)
             self.main_viewer.figures.update_figure(figure_id, im_plot, plot_name)
         else:
-            figure_id = self.main_viewer.figures.add_figure(im_plot, plot_name)
+            figure_id = self.main_viewer.figures.add_figure(im_plot, plot_name,
+                                                            self._safe_clear_figure_id)
             self.points[current_point].add_figure_id(figure_id)
         return figure_id
+
+    def _safe_clear_figure_id(self, figure_id: int) -> None:
+        """Safely removes a given figure.  Used as part of `PlotListWidgetItem.delete_callback`
+
+        Args:
+            figure_id (int):
+                Figure ID for removal
+        """
+
+        if figure_id == self.preview_id:
+            self.preview_id = None
+        if figure_id == self.br_reuse_id:
+            self.br_reuse_id = None
+
+        # check all points
+        for point in self.points.values():
+            point.safe_remove_figure_id(figure_id)
 
     def on_point_change(self, current: QtWidgets.QListWidgetItem,
                         previous: QtWidgets.QListWidgetItem) -> None:

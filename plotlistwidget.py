@@ -12,7 +12,7 @@ from typing import Dict, Callable
 
 class PlotListWidgetItem(QtWidgets.QListWidgetItem):
     def __init__(self, text: str = None, plot: Plot = None, path: str = None,
-                 delete_callback: Callable[...] = None) -> None:
+                 delete_callback: Callable[..., None] = None) -> None:
         super().__init__(text)
         self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
         self.plot = plot
@@ -29,7 +29,7 @@ class PlotListWidget(QtWidgets.QListWidget):
         self.path_to_name: Dict[str, str] = {}
 
     def add_item(self, name: str, plot: Plot, path: str,
-                 delete_callback: Callable[...] = None) -> None:
+                 delete_callback: Callable[..., None] = None) -> None:
 
         super().addItem(PlotListWidgetItem(name, plot, path, delete_callback))
         self.path_to_name[path] = name

@@ -1,7 +1,7 @@
 from collections import deque
 from mplwidget import Plot
 from plotlistwidget import PlotListWidget
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Callable
 
 # prefilling dictionary prevents slow rehashing
 MAX_FIGS = 64
@@ -28,7 +28,8 @@ class FigureManager(object):
         """
         return self.figure_map[index]
 
-    def add_figure(self, plot_object: Plot, name: Union[str, None] = None) -> int:
+    def add_figure(self, plot_object: Plot, name: Union[str, None] = None,
+                   delete_callback_base: Callable[[int], None] = None) -> int:
         """Add new figure to figure manager
 
         Args:
@@ -37,6 +38,8 @@ class FigureManager(object):
             name (str or None):
                 Name passed to the Main Viewer's plot list.  If None, the plot list will list it
                 as f'Figure {index}'. Default is None.
+            delete_callback (Callable[[int], None] or None):
+                Figure deletion callback generator
 
         Returns:
             int:
@@ -46,6 +49,9 @@ class FigureManager(object):
         condition = len(self.open_slots) == 1
 
         index = self.open_slots[0] if condition else self.open_slots.popleft()
+
+        def delete_callback():
+            return delete_callback_base(index)
 
         if index in range(MAX_FIGS-10, MAX_FIGS):
             print(f'Approaching maximum figure limit, {MAX_FIGS}')
@@ -63,7 +69,8 @@ class FigureManager(object):
         self.plot_list.add_item(
             name,
             plot_object,
-            index
+            index,
+            delete_callback
         )
 
         row = self.plot_list.get_item_row_by_path(index)
