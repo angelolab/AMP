@@ -47,6 +47,8 @@ class PlotListWidget(QtWidgets.QListWidget):
 
     # clear entry in path to name dictionary and delete
     def delete_item(self, row: int) -> None:
+        if row is None or row < 0:
+            return
         if self.item(row).delete_callback is not None:
             self.item(row).delete_callback()
 

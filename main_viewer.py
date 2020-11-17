@@ -203,10 +203,13 @@ class MainViewer(QtWidgets.QMainWindow):
 
     # TODO: Write this function
     def delete_plot_item(self) -> None:
+        """ Callback for removing a PlotListWidgetItem
         """
-        """
+        # get current selected plotlistwidgetitem
+        current_row = self.PlotListWidget.currentRow()
 
-        pass
+        # delete it
+        self.PlotListWidget.delete_item(current_row)
 
 
 # start application
