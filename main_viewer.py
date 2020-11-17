@@ -168,8 +168,13 @@ class MainViewer(QtWidgets.QMainWindow):
             item.checkState(0)
             and self.PlotListWidget.get_item_row_by_path(item.path) < 0
         ):
+            def delete_callback():
+                if item.checkState(0):
+                    item.setCheckState(0, QtCore.Qt.Unchecked)
+
             self.PlotListWidget.add_item(
-                name, ImagePlot(asarray(Image.open(item.path))), item.path)
+                name, ImagePlot(asarray(Image.open(item.path))), item.path, delete_callback
+            )
         # remove image otherwise
         elif (
             (row := self.PlotListWidget.get_item_row_by_path(item.path)) >= 0
