@@ -12,26 +12,39 @@ from typing import Dict, Callable
 
 class PlotListWidgetItem(QtWidgets.QListWidgetItem):
     def __init__(self, text: str = None, plot: Plot = None, path: str = None,
-                 delete_callback: Callable[..., None] = None) -> None:
+                 delete_callback: Callable[..., None] = None, canvas: FigureCanvas = None) -> None:
         super().__init__(text)
         self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
         self.plot = plot
         self.path = path
         self.delete_callback = delete_callback
+        self.canvas = canvas
 
-    def refresh(self, canvas: FigureCanvas):
-        self.plot.plot_update(canvas, self.plot.plot_data)
+    def refresh(self):
+        self.plot.plot_update(self.canvas, self.plot.plot_data)
 
 
 class PlotListWidget(QtWidgets.QListWidget):
-    def __init__(self, parent: QtWidgets.QWidget = None):
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         self.path_to_name: Dict[str, str] = {}
+        self.canvas = None
+        self.check_breakout_callback = None
+
+    def set_canvas(self, default_canvas: FigureCanvas) -> None:
+        self.canvas = default_canvas
+
+    def set_breakout_callback(self, callback: Callable[[str], None]) -> None:
+        self.check_breakout_callback = callback
 
     def add_item(self, name: str, plot: Plot, path: str,
                  delete_callback: Callable[..., None] = None) -> None:
 
-        super().addItem(PlotListWidgetItem(name, plot, path, delete_callback))
+        if self.canvas is None:
+            print('PlotListWidget canvas has not been set...\nCannot add item...')
+            return
+
+        super().addItem(PlotListWidgetItem(name, plot, path, delete_callback, self.canvas))
         self.path_to_name[path] = name
 
     # path is a static breadcumb trail to allow for renaming.
@@ -52,8 +65,12 @@ class PlotListWidget(QtWidgets.QListWidget):
         if self.item(row).delete_callback is not None:
             self.item(row).delete_callback()
 
+        # remove breakout window
+        self.item(row).canvas = None
+        self.check_breakout_callback(self.item(row).path)
+
         self.path_to_name.pop(self.item(row).path, None)
         sip.delete(self.takeItem(row))
 
-    def refresh_current_plot(self, canvas: FigureCanvas) -> None:
-        self.currentItem().refresh(canvas)
+    def refresh_current_plot(self) -> None:
+        self.currentItem().refresh()

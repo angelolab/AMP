@@ -11,6 +11,7 @@ from PyQt5 import QtWidgets, QtCore, uic
 
 from mplwidget import ImagePlot
 from figure_manager import FigureManager
+from breakout_figure import BreakoutWindow
 
 from PIL import Image
 from numpy import asarray
@@ -46,6 +47,15 @@ class MainViewer(QtWidgets.QMainWindow):
         # load ui elements into MainViewer class
         uic.loadUi("MainViewer.ui", self)
 
+        # breakout figure windows are mapped path -> window
+        self.breakout_windows: Dict[str, BreakoutWindow] = {}
+
+        # set default canvas for plot list
+        self.PlotListWidget.set_canvas(self.MplWidget._canvas)
+
+        # set check breakout window callback
+        self.PlotListWidget.set_breakout_callback(self._check_delete_breakout)
+
         # TODO: load cached plugins
         self.plugins: Dict[str, QtWidgets.QMainWindow] = {}
 
@@ -63,9 +73,6 @@ class MainViewer(QtWidgets.QMainWindow):
 
         # configure figure manager
         self.figures = FigureManager(self.PlotListWidget)
-
-        # breakout figure windows are mapped path -> window
-        self.breakout_windows = {}
 
         self.setWindowTitle("Main Viewer")
 
@@ -132,10 +139,8 @@ class MainViewer(QtWidgets.QMainWindow):
         data has been written to an existing PlotListItem
 
         """
-        # TODO: Figure out what the current plot is, so a proper canvas can be passed
         self.executer.submit(
-            self.PlotListWidget.refresh_current_plot,
-            self.MplWidget._canvas
+            self.PlotListWidget.refresh_current_plot
         )
 
     def load_cohort(self) -> None:
@@ -232,12 +237,16 @@ class MainViewer(QtWidgets.QMainWindow):
 
         selected_path = current_selected.path
 
-        # create new figure window referencing plotlistwidgetitem
-        # TODO: Create generic breakout plot window
-        self.breakout_windows[selected_path] = ""
+        # create new figure window, set plot list widget item canvas to new window
+        self.breakout_windows[selected_path] = BreakoutWindow()
+        current_selected.canvas = self.breakout_windows[selected_path].MplWidget._canvas
 
         # hide current plotlistwidgetitem
         current_selected.setHidden(True)
+
+        # show new figure window
+        self.breakout_windows[selected_path].show()
+        current_selected.refresh()
 
         # change current selection
         if current_nonhidden <= 1:
@@ -247,6 +256,11 @@ class MainViewer(QtWidgets.QMainWindow):
                 if not self.PlotListWidget.item(i).isHidden():
                     self.PlotListWidget.setCurrentRow(i)
                     break
+
+    def _check_delete_breakout(self, path: str) -> None:
+        if path in self.breakout_windows.keys():
+            self.breakout_windows[path].close()
+            del self.breakout_windows[path]
 
 
 # start application
