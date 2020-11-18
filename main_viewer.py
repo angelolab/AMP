@@ -238,7 +238,16 @@ class MainViewer(QtWidgets.QMainWindow):
         selected_path = current_selected.path
 
         # create new figure window, set plot list widget item canvas to new window
-        self.breakout_windows[selected_path] = BreakoutWindow()
+        def _on_close_callback():
+            if selected_path not in self.breakout_windows.keys():
+                return
+
+            current_selected.canvas = self.MplWidget._canvas
+            current_selected.setHidden(False)
+
+            del self.breakout_windows[selected_path]
+
+        self.breakout_windows[selected_path] = BreakoutWindow(_on_close_callback)
         current_selected.canvas = self.breakout_windows[selected_path].MplWidget._canvas
 
         # hide current plotlistwidgetitem
@@ -260,7 +269,6 @@ class MainViewer(QtWidgets.QMainWindow):
     def _check_delete_breakout(self, path: str) -> None:
         if path in self.breakout_windows.keys():
             self.breakout_windows[path].close()
-            del self.breakout_windows[path]
 
 
 # start application
