@@ -203,6 +203,10 @@ class MainViewer(QtWidgets.QMainWindow):
                                                         'New Plugin',
                                                         '~',
                                                         '*.py')[0]
+        if ui_path == "":
+            print('No plugin loaded...')
+            return
+
         ui_name = os.path.basename(ui_path).split('.')[0]
         # load plugin if it doesn't exist already
         if ui_name not in self.plugins.keys():
