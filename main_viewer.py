@@ -271,6 +271,8 @@ class MainViewer(QtWidgets.QMainWindow):
                     break
 
     def _check_delete_breakout(self, path: str) -> None:
+        """ Callback for calling breakout window closure routine
+        """
         if path in self.breakout_windows.keys():
             self.breakout_windows[path].close()
 

@@ -153,9 +153,16 @@
     <addaction name="actionAdd_Plugins"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuImage">
+    <property name="title">
+     <string>Image</string>
+    </property>
+    <addaction name="actionBrightness_and_Contrast"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuPlugins"/>
+   <addaction name="menuImage"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAdd_Plugins">
@@ -166,6 +173,11 @@
   <action name="actionOpen_Cohort">
    <property name="text">
     <string>Open Cohort...</string>
+   </property>
+  </action>
+  <action name="actionBrightness_and_Contrast">
+   <property name="text">
+    <string>Brightness and Contrast</string>
    </property>
   </action>
  </widget>
