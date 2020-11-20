@@ -74,3 +74,6 @@ class PlotListWidget(QtWidgets.QListWidget):
 
     def refresh_current_plot(self) -> None:
         self.currentItem().refresh()
+        for i in range(self.count()):
+            if self.item(i).canvas != self.canvas:
+                self.item(i).refresh()

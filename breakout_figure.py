@@ -1,8 +1,8 @@
 # start custom imports - DO NOT MANUALLY EDIT BELOW
-from typing import Callable
 from mplwidget import MplWidget
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
 
+from typing import Callable
 from PyQt5 import QtWidgets, QtGui, uic
 
 

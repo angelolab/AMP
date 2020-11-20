@@ -29,6 +29,7 @@ class MainViewer(QtWidgets.QMainWindow):
     def __init__(self):
         # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
+        self.menuImage: QtWidgets.QMenu
         self.menuPlugins: QtWidgets.QMenu
         self.menuEdit: QtWidgets.QMenu
         self.menuFile: QtWidgets.QMenu
@@ -70,6 +71,7 @@ class MainViewer(QtWidgets.QMainWindow):
         self.actionAdd_Plugins.triggered.connect(self.add_plugin)
         self.deleteButton.clicked.connect(self.delete_plot_item)
         self.breakoutButton.clicked.connect(self.breakout_plot)
+        # self.actionBrightness_and_Contrast.triggered.connect(self.open_contrast_window)
 
         # configure figure manager
         self.figures = FigureManager(self.PlotListWidget)
