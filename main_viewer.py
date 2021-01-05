@@ -12,6 +12,7 @@ from PyQt5 import QtWidgets, QtCore, uic
 from mplwidget import ImagePlot
 from figure_manager import FigureManager
 from breakout_figure import BreakoutWindow
+from contrast_window import ContrastWindow
 
 from PIL import Image
 from numpy import asarray
@@ -21,7 +22,7 @@ import concurrent.futures
 
 import amp
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Union
 
 
 class MainViewer(QtWidgets.QMainWindow):
@@ -48,6 +49,8 @@ class MainViewer(QtWidgets.QMainWindow):
         # load ui elements into MainViewer class
         uic.loadUi("MainViewer.ui", self)
 
+        self.contrast_window: ContrastWindow = ContrastWindow()
+
         # breakout figure windows are mapped path -> window
         self.breakout_windows: Dict[str, BreakoutWindow] = {}
 
@@ -56,6 +59,9 @@ class MainViewer(QtWidgets.QMainWindow):
 
         # set check breakout window callback
         self.PlotListWidget.set_breakout_callback(self._check_delete_breakout)
+
+        # set contrast checking callback
+        self.PlotListWidget.set_contrast_callback(self._check_contrast)
 
         # TODO: load cached plugins
         self.plugins: Dict[str, QtWidgets.QMainWindow] = {}
@@ -71,7 +77,9 @@ class MainViewer(QtWidgets.QMainWindow):
         self.actionAdd_Plugins.triggered.connect(self.add_plugin)
         self.deleteButton.clicked.connect(self.delete_plot_item)
         self.breakoutButton.clicked.connect(self.breakout_plot)
-        # self.actionBrightness_and_Contrast.triggered.connect(self.open_contrast_window)
+        self.actionBrightness_and_Contrast.triggered.connect(self.open_contrast_window)
+        self.contrast_window.maxCapSlider.valueChanged.connect(self.refresh_contrasts)
+        self.contrast_window.minCapSlider.valueChanged.connect(self.refresh_contrasts)
 
         # configure figure manager
         self.figures = FigureManager(self.PlotListWidget)
@@ -86,6 +94,11 @@ class MainViewer(QtWidgets.QMainWindow):
         """
         for plugin in self.plugins.values():
             plugin.close()
+
+        del self.contrast_window
+
+        for bw in self.breakout_windows.values():
+            bw.close()
 
         event.accept()
 
@@ -129,6 +142,10 @@ class MainViewer(QtWidgets.QMainWindow):
         """
         if current:
             self.executer.submit(
+                current.refresh,
+                self._check_contrast()
+            )
+            self.executer.submit(
                 current.plot.plot_update,
                 self.MplWidget._canvas,
                 current.plot.plot_data
@@ -143,6 +160,17 @@ class MainViewer(QtWidgets.QMainWindow):
         """
         self.executer.submit(
             self.PlotListWidget.refresh_current_plot
+        )
+
+    def refresh_contrasts(self) -> None:
+        """ Manually update contrast, with bypass on lock
+
+        This allows for individual contrast settings on different plots
+
+        """
+        self.executer.submit(
+            self.PlotListWidget.refresh_current_plot,
+            True
         )
 
     def load_cohort(self) -> None:
@@ -261,7 +289,7 @@ class MainViewer(QtWidgets.QMainWindow):
 
         # show new figure window
         self.breakout_windows[selected_path].show()
-        current_selected.refresh()
+        current_selected.refresh(self._check_contrast())
 
         # change current selection
         if current_nonhidden <= 1:
@@ -277,6 +305,21 @@ class MainViewer(QtWidgets.QMainWindow):
         """
         if path in self.breakout_windows.keys():
             self.breakout_windows[path].close()
+
+    def open_contrast_window(self) -> None:
+        """ Callback for showing/hinding contrast window
+        """
+        self.contrast_window.show()
+
+    def _check_contrast(self, bypass_lock=False) -> Union[Tuple, None]:
+        """
+        """
+        if not self.contrast_window.freezeContrastBox.isChecked() or bypass_lock:
+            # print('checking contrast')
+            return (self.contrast_window.minCapSlider.value(),
+                    self.contrast_window.maxCapSlider.value())
+        else:
+            return None
 
 
 # start application

@@ -418,9 +418,11 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
                 mask_name = self._gen_mask_fig_name(current_point, current_text, br_params)
                 channel_mask = self._generate_mask(channel_data, *br_params)
 
-                self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point,
-                                                           ImagePlot(channel_mask), mask_name,
-                                                           self.rparamsReuseButton)
+                self.br_reuse_id = self._add_update_figure(
+                    self.br_reuse_id, current_point,
+                    ImagePlot(channel_mask, fixed_contrast=True), mask_name,
+                    self.rparamsReuseButton
+                )
 
             # refresh plots
             self.main_viewer.refresh_plots()
@@ -543,7 +545,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         mask_name = \
             self._gen_mask_fig_name(current_point, current_channel, [radius, threshold, backcap])
 
-        im_plot = ImagePlot(background_mask)
+        im_plot = ImagePlot(background_mask, fixed_contrast=True)
         self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
                                                    mask_name, self.rparamsReuseButton)
 
@@ -606,7 +608,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         mask_name = \
             self._gen_mask_fig_name(current_point, current_channel, params)
 
-        im_plot = ImagePlot(background_mask)
+        im_plot = ImagePlot(background_mask, fixed_contrast=True)
 
         self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
                                                    mask_name, self.rparamsReuseButton)
@@ -780,7 +782,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
 
         # get preview image for before and plot
-        self._add_update_figure(None, eval_point, ImagePlot(unprocessed_channel), before_name)
+        self._add_update_figure(
+            None, eval_point, ImagePlot(unprocessed_channel, fixed_contrast=True), before_name
+        )
 
         processed_channel = self._evaluate_channel(
             channel_data[bg_channel],
@@ -793,7 +797,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         # show after image as different plot
         processed_channel[processed_channel > eval_cap] = eval_cap
-        self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
+        self._add_update_figure(
+            None, eval_point, ImagePlot(processed_channel, fixed_contrast=True), after_name
+        )
 
         # get next row and add data to points for storage
         new_row = self.eparamsTable.rowCount()
@@ -840,7 +846,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
 
             # get preview image for before and plot
-            self._add_update_figure(None, eval_point, ImagePlot(unprocessed_channel), before_name)
+            self._add_update_figure(
+                None, eval_point, ImagePlot(unprocessed_channel, fixed_contrast=True), before_name
+                )
 
             processed_channel = self._evaluate_channel(
                 channel_data[bg_channel],
@@ -853,7 +861,9 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
             # show after image as different plot
             processed_channel[processed_channel > eval_cap] = eval_cap
-            self._add_update_figure(None, eval_point, ImagePlot(processed_channel), after_name)
+            self._add_update_figure(
+                None, eval_point, ImagePlot(processed_channel, fixed_contrast=True), after_name
+            )
 
             new_row = self.eparamsTable.rowCount()
             params = self.points[eval_point].get_param('EV_params')

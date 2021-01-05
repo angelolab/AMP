@@ -5,7 +5,7 @@ from mplwidget import Plot
 
 import sip
 
-from typing import Dict, Callable
+from typing import Dict, Callable, Tuple, Union
 
 # Handles storing plotting data in Qt List
 
@@ -20,7 +20,10 @@ class PlotListWidgetItem(QtWidgets.QListWidgetItem):
         self.delete_callback = delete_callback
         self.canvas = canvas
 
-    def refresh(self):
+    def refresh(self, contrast_settings: Union[Tuple, None] = None):
+        if contrast_settings is not None:
+            self.plot.plot_data['min_cap'] = contrast_settings[0]
+            self.plot.plot_data['max_cap'] = contrast_settings[1]
         self.plot.plot_update(self.canvas, self.plot.plot_data)
 
 
@@ -36,6 +39,9 @@ class PlotListWidget(QtWidgets.QListWidget):
 
     def set_breakout_callback(self, callback: Callable[[str], None]) -> None:
         self.check_breakout_callback = callback
+
+    def set_contrast_callback(self, callback: Callable[..., Union[Tuple, None]]) -> None:
+        self.contrast_callback = callback
 
     def add_item(self, name: str, plot: Plot, path: str,
                  delete_callback: Callable[..., None] = None) -> None:
@@ -72,8 +78,11 @@ class PlotListWidget(QtWidgets.QListWidget):
         self.path_to_name.pop(self.item(row).path, None)
         sip.delete(self.takeItem(row))
 
-    def refresh_current_plot(self) -> None:
-        self.currentItem().refresh()
+    def refresh_current_plot(self, bypass_contrast_lock=False) -> None:
+        contrast_settings = self.contrast_callback(bypass_contrast_lock)
+
+        self.currentItem().refresh(contrast_settings)
+
         for i in range(self.count()):
             if self.item(i).canvas != self.canvas:
-                self.item(i).refresh()
+                self.item(i).refresh(contrast_settings)

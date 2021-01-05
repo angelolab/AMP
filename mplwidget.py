@@ -6,6 +6,8 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 )
 
+import numpy as np
+
 from matplotlib.figure import Figure
 import matplotlib.cm as cm
 
@@ -31,7 +33,17 @@ def image_plot_update(canvas: FigureCanvas, data: Dict[str, Any]) -> None:
         cur_xlim = canvas.axes.get_xlim()
         cur_ylim = canvas.axes.get_ylim()
     canvas.axes.clear()
-    canvas.axes.imshow(data['image'], cmap=cm.afmhot)
+
+    # check plot data for contrast info
+    # contrast is relative now
+    raw_imdata = data['image'].copy()
+    if 'min_cap' in data.keys() and not data['fixed_contrast']:
+        min_cap = data['min_cap'] / 100
+        max_cap = data['max_cap'] * np.max(raw_imdata) / 100
+        raw_imdata[raw_imdata < min_cap] = min_cap
+        raw_imdata[raw_imdata > max_cap] = max_cap
+
+    canvas.axes.imshow(raw_imdata, cmap=cm.afmhot)
     if cur_xlim:
         canvas.axes.set_xlim(cur_xlim)
         canvas.axes.set_ylim(cur_ylim)
@@ -40,8 +52,8 @@ def image_plot_update(canvas: FigureCanvas, data: Dict[str, Any]) -> None:
 
 class ImagePlot(Plot):
     # plots images via imshow
-    def __init__(self, data: Any) -> None:
-        super().__init__(image_plot_update, {'image': data})
+    def __init__(self, data: Any, fixed_contrast: bool = False) -> None:
+        super().__init__(image_plot_update, {'image': data, 'fixed_contrast': fixed_contrast})
 
 
 # a more customizable toolbar (loadable icons)
