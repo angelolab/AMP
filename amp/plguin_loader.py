@@ -1,4 +1,5 @@
 import os
+import re
 
 from PyQt5 import QtWidgets
 
@@ -7,12 +8,12 @@ from importlib.machinery import SourceFileLoader
 # tools for loading amp plugins
 
 
-def load_plugin(ui_file: str, main_viewer: QtWidgets.QMainWindow) -> QtWidgets.QMainWindow:
+def load_plugin(plugin_path: str, main_viewer: QtWidgets.QMainWindow) -> QtWidgets.QMainWindow:
     """Load plugin from file and return an instance
 
     Args:
-        ui_file (str):
-            File path to plugin.  This must be a .py file.
+        plugin_path (str):
+            File path to plugin.  This should be a folder/zip with .ui and .py file
         main_viewer (QtWidgets.QMainWindow):
             Main viewer instance.  Plugins need to contain a reference to the main viewer.
 
@@ -20,10 +21,15 @@ def load_plugin(ui_file: str, main_viewer: QtWidgets.QMainWindow) -> QtWidgets.Q
         QtWidgets.QMainWindow:
             Plugin defined within ui_file
     """
-    imp_name = os.path.basename(ui_file).split('.')[0]
-    plugin = SourceFileLoader(imp_name, ui_file).load_module()
+
+    plugin_name = os.path.basename(plugin_path).split('.')[0]
+    ui_name = ''.join([f'{tocap[0].upper()}{tocap[1:]}' for tocap in plugin_name.split('_')])
+    py_path = os.path.join(plugin_path, f'{plugin_name}.py')
+    ui_path = os.path.join(plugin_path, f'{ui_name}.ui')
+
+    plugin = SourceFileLoader(plugin_name, py_path).load_module()
     builder = getattr(plugin, 'build_as_plugin')
-    return builder(main_viewer)
+    return builder(main_viewer, ui_path)
 
 
 # class Plugin(QtWidgets.QMainWindow):

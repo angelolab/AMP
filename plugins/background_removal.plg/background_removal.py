@@ -22,7 +22,7 @@ import numbers
 
 class BackgroundRemoval(QtWidgets.QMainWindow):
 
-    def __init__(self, main_viewer: MainViewer):
+    def __init__(self, main_viewer: MainViewer, ui_path: str):
         # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
         self.menubar: QtWidgets.QMenuBar
@@ -88,7 +88,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         # load ui elements into MainViewer class
         uic.loadUi(
-            resource_path('ui/BackgroundRemoval.ui'),
+            ui_path,
             self
         )
 
@@ -960,7 +960,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
 
 # function for amp plugin building
-def build_as_plugin(main_viewer: MainViewer) -> BackgroundRemoval:
+def build_as_plugin(main_viewer: MainViewer, plugin_path: str) -> BackgroundRemoval:
     """ Returns an instance of BackgroundRemoval
 
     This function is common to all plugins; it allows the plugin loader
@@ -970,4 +970,4 @@ def build_as_plugin(main_viewer: MainViewer) -> BackgroundRemoval:
         main_viewer (MainViewer): reference to the main window
     """
 
-    return BackgroundRemoval(main_viewer)
+    return BackgroundRemoval(main_viewer, plugin_path)

@@ -187,10 +187,9 @@ class MainViewer(QtWidgets.QMainWindow):
         easy reuse.
 
         """
-        ui_path = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                        'New Plugin',
-                                                        '~',
-                                                        '*.py')[0]
+        ui_path = QtWidgets.QFileDialog.getExistingDirectory(self,
+                                                            'New Plugin',
+                                                            '~')
         ui_name = os.path.basename(ui_path).split('.')[0]
         # load plugin if it doesn't exist already
         if ui_name not in self.plugins.keys():
