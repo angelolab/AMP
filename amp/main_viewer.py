@@ -1,16 +1,16 @@
 # start custom imports - DO NOT MANUALLY EDIT BELOW
-from cohorttreewidget import CohortTreeWidget
-from plotlistwidget import PlotListWidget
-from mplwidget import MplWidget
+from amp.cohorttreewidget import CohortTreeWidget
+from amp.plotlistwidget import PlotListWidget
+from amp.mplwidget import MplWidget
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
-from cohorttreewidget import CohortTreeWidgetItem
-from plotlistwidget import PlotListWidgetItem
+from amp.cohorttreewidget import CohortTreeWidgetItem
+from amp.plotlistwidget import PlotListWidgetItem
 import sys
 
 from PyQt5 import QtWidgets, QtCore, uic
 
-from mplwidget import ImagePlot
-from figure_manager import FigureManager
+from amp.mplwidget import ImagePlot
+from amp.figure_manager import FigureManager
 
 from PIL import Image
 from numpy import asarray
@@ -18,9 +18,9 @@ from numpy import asarray
 import os
 import concurrent.futures
 
-from amp import load_plugin
+from amp.plguin_loader import load_plugin
 
-from resource_path import resource_path
+from amp.resource_path import resource_path
 
 from typing import Dict, Any
 
@@ -45,7 +45,7 @@ class MainViewer(QtWidgets.QMainWindow):
         super().__init__()
         # load ui elements into MainViewer class
         uic.loadUi(
-            resource_path('res/MainViewer.ui'),
+            resource_path('ui/MainViewer.ui'),
             self
         )
 

@@ -1,6 +1,6 @@
 from collections import deque
-from mplwidget import Plot
-from plotlistwidget import PlotListWidget
+from amp.mplwidget import Plot
+from amp.plotlistwidget import PlotListWidget
 from typing import List, Union, Dict
 
 # prefilling dictionary prevents slow rehashing

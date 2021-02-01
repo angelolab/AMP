@@ -2,10 +2,10 @@
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
 from PyQt5 import QtWidgets, QtCore, uic
 
-from mplwidget import ImagePlot, Plot
-from point import Point
-from main_viewer import MainViewer
-from resource_path import resource_path
+from amp.mplwidget import ImagePlot, Plot
+from amp.point import Point
+from amp.main_viewer import MainViewer
+from amp.resource_path import resource_path
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
@@ -88,7 +88,7 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
 
         # load ui elements into MainViewer class
         uic.loadUi(
-            resource_path('res/BackgroundRemoval.ui'),
+            resource_path('ui/BackgroundRemoval.ui'),
             self
         )
 

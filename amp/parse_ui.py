@@ -52,7 +52,7 @@ for ui_file, py_file in pairs:
                 if cc in all_names:
                     py_data.insert(
                         0,
-                        f'from {all_classes[cc == all_names].__module__} import {cc}\n'
+                        f'from amp.{all_classes[cc == all_names].__module__} import {cc}\n'
                     )
                     break
     py_data.insert(0, '# start custom imports - DO NOT MANUALLY EDIT BELOW\n')

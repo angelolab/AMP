@@ -3,11 +3,11 @@
 block_cipher = None
 
 
-a = Analysis(['src/main/python/main_viewer.py'],
+a = Analysis(['src/main.py'],
              pathex=['/Users/ackagel/Documents/dev/amp/AMP'],
              binaries=[],
-             datas=[('/Users/ackagel/Documents/dev/amp/AMP/res', 'res')],
-             hiddenimports=['background_removal'],
+             datas=[('/Users/ackagel/Documents/dev/amp/AMP/ui', 'ui')],
+             hiddenimports=['plugins.background_removal.background_removal'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
