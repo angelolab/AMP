@@ -1,12 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 
 block_cipher = None
 
+pathex = os.path.abspath(SPECPATH)
+
 
 a = Analysis(['src/main.py'],
-             pathex=['/Users/ackagel/Documents/dev/amp/AMP'],
+             pathex=[pathex],
              binaries=[],
-             datas=[('/Users/ackagel/Documents/dev/amp/AMP/ui', 'ui')],
+             datas=[(os.path.join(pathex, 'ui'), 'ui')],
              hiddenimports=['plugins.plugin_header'],
              hookspath=[],
              runtime_hooks=[],
