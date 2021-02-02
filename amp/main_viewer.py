@@ -1,18 +1,18 @@
 # start custom imports - DO NOT MANUALLY EDIT BELOW
-from cohorttreewidget import CohortTreeWidget
-from plotlistwidget import PlotListWidget
-from mplwidget import MplWidget
+from amp.cohorttreewidget import CohortTreeWidget
+from amp.plotlistwidget import PlotListWidget
+from amp.mplwidget import MplWidget
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
-from cohorttreewidget import CohortTreeWidgetItem
-from plotlistwidget import PlotListWidgetItem
+from amp.cohorttreewidget import CohortTreeWidgetItem
+from amp.plotlistwidget import PlotListWidgetItem
 import sys
 
 from PyQt5 import QtWidgets, QtCore, uic
 
-from mplwidget import ImagePlot
-from figure_manager import FigureManager
-from breakout_figure import BreakoutWindow
-from contrast_window import ContrastWindow
+from amp.breakout_figure import BreakoutWindow
+from amp.contrast_window import ContrastWindow
+from amp.mplwidget import ImagePlot
+from amp.figure_manager import FigureManager
 
 from PIL import Image
 from numpy import asarray
@@ -20,7 +20,9 @@ from numpy import asarray
 import os
 import concurrent.futures
 
-import amp
+from amp.plguin_loader import load_plugin
+
+from amp.resource_path import resource_path
 
 from typing import Dict, Any, Tuple, Union
 
@@ -47,7 +49,10 @@ class MainViewer(QtWidgets.QMainWindow):
 
         super().__init__()
         # load ui elements into MainViewer class
-        uic.loadUi("MainViewer.ui", self)
+        uic.loadUi(
+            resource_path('ui/MainViewer.ui'),
+            self
+        )
 
         self.contrast_window: ContrastWindow = ContrastWindow()
 
@@ -203,10 +208,11 @@ class MainViewer(QtWidgets.QMainWindow):
         # set default name
         name = os.path.basename(item.path).split('.')[0]
         name = f'{os.path.split(item.path)[0].split("/")[-1]}_{name}'
+        row = self.PlotListWidget.get_item_row_by_path(item.path)
         # add image if not already in plot list
         if (
             item.checkState(0)
-            and self.PlotListWidget.get_item_row_by_path(item.path) < 0
+            and row < 0
         ):
             def delete_callback():
                 if item.checkState(0):
@@ -217,7 +223,7 @@ class MainViewer(QtWidgets.QMainWindow):
             )
         # remove image otherwise
         elif (
-            (row := self.PlotListWidget.get_item_row_by_path(item.path)) >= 0
+            row >= 0
             and not item.checkState(0)
         ):
             self.PlotListWidget.delete_item(row)
@@ -229,18 +235,22 @@ class MainViewer(QtWidgets.QMainWindow):
         easy reuse.
 
         """
-        ui_path = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                        'New Plugin',
-                                                        '~',
-                                                        '*.py')[0]
+        ui_path = QtWidgets.QFileDialog.getExistingDirectory(self,
+                                                            'New Plugin',
+                                                            '~')
+
         if ui_path == "":
             print('No plugin loaded...')
+            return
+        
+        if ui_path.split('.')[-1] != "plg":
+            print(f'{ui_path} is not a valid plugin...')
             return
 
         ui_name = os.path.basename(ui_path).split('.')[0]
         # load plugin if it doesn't exist already
         if ui_name not in self.plugins.keys():
-            self.plugins[ui_name] = amp.load_plugin(ui_path, self)
+            self.plugins[ui_name] = load_plugin(ui_path, self)
 
             # TODO: cache plugin so its present on reopening
             #

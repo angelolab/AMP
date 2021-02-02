@@ -185,18 +185,18 @@
   <customwidget>
    <class>MplWidget</class>
    <extends>QWidget</extends>
-   <header>mplwidget.h</header>
+   <header>amp.mplwidget</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>PlotListWidget</class>
    <extends>QListWidget</extends>
-   <header>plotlistwidget.h</header>
+   <header>amp.plotlistwidget</header>
   </customwidget>
   <customwidget>
    <class>CohortTreeWidget</class>
    <extends>QTreeWidget</extends>
-   <header>cohorttreewidget.h</header>
+   <header>amp.cohorttreewidget</header>
   </customwidget>
  </customwidgets>
  <resources/>
