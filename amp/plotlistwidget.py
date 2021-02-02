@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
-from mplwidget import Plot
+from amp.mplwidget import Plot
 
 import sip
 

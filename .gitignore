@@ -5,3 +5,9 @@
 envs/
 
 .travis.yml
+
+build/
+
+dist/
+
+*.egg-info
