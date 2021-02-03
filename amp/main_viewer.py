@@ -9,6 +9,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore, uic
 
+from amp.breakout_figure import BreakoutWindow
+from amp.contrast_window import ContrastWindow
 from amp.mplwidget import ImagePlot
 from amp.figure_manager import FigureManager
 
@@ -22,7 +24,7 @@ from amp.plguin_loader import load_plugin
 
 from amp.resource_path import resource_path
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Union
 
 
 class MainViewer(QtWidgets.QMainWindow):
@@ -30,12 +32,15 @@ class MainViewer(QtWidgets.QMainWindow):
     def __init__(self):
         # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
+        self.menuImage: QtWidgets.QMenu
         self.menuPlugins: QtWidgets.QMenu
         self.menuEdit: QtWidgets.QMenu
         self.menuFile: QtWidgets.QMenu
         self.menubar: QtWidgets.QMenuBar
         self.CohortTreeWidget: CohortTreeWidget
         self.label_2: QtWidgets.QLabel
+        self.deleteButton: QtWidgets.QPushButton
+        self.breakoutButton: QtWidgets.QPushButton
         self.PlotListWidget: PlotListWidget
         self.label: QtWidgets.QLabel
         self.MplWidget: MplWidget
@@ -49,6 +54,20 @@ class MainViewer(QtWidgets.QMainWindow):
             self
         )
 
+        self.contrast_window: ContrastWindow = ContrastWindow()
+
+        # breakout figure windows are mapped path -> window
+        self.breakout_windows: Dict[str, BreakoutWindow] = {}
+
+        # set default canvas for plot list
+        self.PlotListWidget.set_canvas(self.MplWidget._canvas)
+
+        # set check breakout window callback
+        self.PlotListWidget.set_breakout_callback(self._check_delete_breakout)
+
+        # set contrast checking callback
+        self.PlotListWidget.set_contrast_callback(self._check_contrast)
+
         # TODO: load cached plugins
         self.plugins: Dict[str, QtWidgets.QMainWindow] = {}
 
@@ -61,6 +80,11 @@ class MainViewer(QtWidgets.QMainWindow):
         self.CohortTreeWidget.itemClicked.connect(self.on_file_toggle)
         self.actionOpen_Cohort.triggered.connect(self.load_cohort)
         self.actionAdd_Plugins.triggered.connect(self.add_plugin)
+        self.deleteButton.clicked.connect(self.delete_plot_item)
+        self.breakoutButton.clicked.connect(self.breakout_plot)
+        self.actionBrightness_and_Contrast.triggered.connect(self.open_contrast_window)
+        self.contrast_window.maxCapSlider.valueChanged.connect(self.refresh_contrasts)
+        self.contrast_window.minCapSlider.valueChanged.connect(self.refresh_contrasts)
 
         # configure figure manager
         self.figures = FigureManager(self.PlotListWidget)
@@ -75,6 +99,11 @@ class MainViewer(QtWidgets.QMainWindow):
         """
         for plugin in self.plugins.values():
             plugin.close()
+
+        del self.contrast_window
+
+        for bw in self.breakout_windows.values():
+            bw.close()
 
         event.accept()
 
@@ -118,6 +147,10 @@ class MainViewer(QtWidgets.QMainWindow):
         """
         if current:
             self.executer.submit(
+                current.refresh,
+                self._check_contrast()
+            )
+            self.executer.submit(
                 current.plot.plot_update,
                 self.MplWidget._canvas,
                 current.plot.plot_data
@@ -131,8 +164,18 @@ class MainViewer(QtWidgets.QMainWindow):
 
         """
         self.executer.submit(
+            self.PlotListWidget.refresh_current_plot
+        )
+
+    def refresh_contrasts(self) -> None:
+        """ Manually update contrast, with bypass on lock
+
+        This allows for individual contrast settings on different plots
+
+        """
+        self.executer.submit(
             self.PlotListWidget.refresh_current_plot,
-            self.MplWidget._canvas
+            True
         )
 
     def load_cohort(self) -> None:
@@ -171,8 +214,13 @@ class MainViewer(QtWidgets.QMainWindow):
             item.checkState(0)
             and row < 0
         ):
+            def delete_callback():
+                if item.checkState(0):
+                    item.setCheckState(0, QtCore.Qt.Unchecked)
+
             self.PlotListWidget.add_item(
-                name, ImagePlot(asarray(Image.open(item.path))), item.path)
+                name, ImagePlot(asarray(Image.open(item.path))), item.path, delete_callback
+            )
         # remove image otherwise
         elif (
             row >= 0
@@ -190,6 +238,15 @@ class MainViewer(QtWidgets.QMainWindow):
         ui_path = QtWidgets.QFileDialog.getExistingDirectory(self,
                                                             'New Plugin',
                                                             '~')
+
+        if ui_path == "":
+            print('No plugin loaded...')
+            return
+        
+        if ui_path.split('.')[-1] != "plg":
+            print(f'{ui_path} is not a valid plugin...')
+            return
+
         ui_name = os.path.basename(ui_path).split('.')[0]
         # load plugin if it doesn't exist already
         if ui_name not in self.plugins.keys():
@@ -202,6 +259,77 @@ class MainViewer(QtWidgets.QMainWindow):
             self.menuPlugins.addAction(
                 ui_name,
                 self.create_plugin_callback(ui_name))
+
+    def delete_plot_item(self) -> None:
+        """ Callback for removing a PlotListWidgetItem
+        """
+        # get current selected plotlistwidgetitem
+        current_row = self.PlotListWidget.currentRow()
+
+        # delete it
+        self.PlotListWidget.delete_item(current_row)
+
+    def breakout_plot(self) -> None:
+        """ Callback for breaking a plot out into a separate window.
+        """
+        # get current selected plotlistwidgetitem
+        current_selected = self.PlotListWidget.currentItem()
+        current_nonhidden = self.PlotListWidget.count() - len(self.breakout_windows)
+
+        if current_selected is None:
+            return
+
+        selected_path = current_selected.path
+
+        # create new figure window, set plot list widget item canvas to new window
+        def _on_close_callback():
+            if selected_path not in self.breakout_windows.keys():
+                return
+
+            current_selected.canvas = self.MplWidget._canvas
+            current_selected.setHidden(False)
+
+            del self.breakout_windows[selected_path]
+
+        self.breakout_windows[selected_path] = BreakoutWindow(_on_close_callback)
+        current_selected.canvas = self.breakout_windows[selected_path].MplWidget._canvas
+
+        # hide current plotlistwidgetitem
+        current_selected.setHidden(True)
+
+        # show new figure window
+        self.breakout_windows[selected_path].show()
+        current_selected.refresh(self._check_contrast())
+
+        # change current selection
+        if current_nonhidden <= 1:
+            self.PlotListWidget.setCurrentRow(-1)
+        else:
+            for i in range(self.PlotListWidget.count()):
+                if not self.PlotListWidget.item(i).isHidden():
+                    self.PlotListWidget.setCurrentRow(i)
+                    break
+
+    def _check_delete_breakout(self, path: str) -> None:
+        """ Callback for calling breakout window closure routine
+        """
+        if path in self.breakout_windows.keys():
+            self.breakout_windows[path].close()
+
+    def open_contrast_window(self) -> None:
+        """ Callback for showing/hinding contrast window
+        """
+        self.contrast_window.show()
+
+    def _check_contrast(self, bypass_lock=False) -> Union[Tuple, None]:
+        """
+        """
+        if not self.contrast_window.freezeContrastBox.isChecked() or bypass_lock:
+            # print('checking contrast')
+            return (self.contrast_window.minCapSlider.value(),
+                    self.contrast_window.maxCapSlider.value())
+        else:
+            return None
 
 
 # start application
