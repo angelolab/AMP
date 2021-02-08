@@ -186,6 +186,9 @@ class MainViewer(QtWidgets.QMainWindow):
                                                                 'Open Cohort',
                                                                 '~',
                                                                 flags)
+        if folderpath == "":
+            return
+            
         self.CohortTreeWidget.load_cohort(folderpath)
 
     def on_file_toggle(self, item: CohortTreeWidgetItem, column: int) -> None:
