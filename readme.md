@@ -1,20 +1,30 @@
-# AMP
-## Augmentable MIBI Pipeline
+## Overview
 
-AMP is port of MAUI from MATLAB to python.  Using python opens up easier usage of machine learning in low-level MIBI data processing.
+`AMP`, the Augmentable Mibi Pipeline, is a GUI environment for dynamically processing multiplexed
+image data via a configurable plugin-style architecture.  With no plugins active, AMP acts as a 
+simple image viewer.  For now, AMP's standard plugins will be directclones of those in MAUI.
 
 ## Features
 
 - Quick 'whole-cohort' tiff viewing from main viewer
 - Loadable plugin interface for highly configurable data processing
-- NO MATLAB LICENSE REQUIRED :)
+- Single executable; no need to run in any sort environment (MATLAB, docker, conda, etc)
 
-## Current plugins
+### Current plugins
 
-No fully functioning plugins are available at this time...
+- 🟡 MAUI style background removal
 
-## Planned plugins
+### Planned plugins
 
-- MAUI style background removal
-- MAUI style KNN-denoising
-- MAUI style aggregate removal
+- ❌ MAUI style KNN-denoising
+- ❌ MAUI style aggregate removal
+
+## Getting Started
+
+ - [Installation](./docs/installation.md)
+ - [Main Viewer](./docs/main_viewer.md)
+ - [Plugin Loading](./docs/plugin_loading.md)
+
+## Support
+
+## License
