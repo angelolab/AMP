@@ -5,15 +5,21 @@ taskbar.
 
 ![](./pngs/add_plugins.png)
 
-Navigate to the `plugins` folder that was extracted from `plugins.zip`.  Select any of the `.plg`
-folders and hit the `Open` button to load the plugin.
+![]()
+
+Navigate to the `plugins` folder that was extracted from `plugins.zip`.  Select the `.plg` folder
+corresponding to the plugin you want to load and hit the `Open` button.
 
 ![](./pngs/plugins_file_explorer.png)
+
+![]()
 
 To open and use the plugins, open the `Plugins` section of the upper taskbar and click on the
 desired plugin name.  This will open the plugin so that it can be used.
 
 ![](./pngs/open_plugin.png)
+
+![]()
 
 <div 
     style="

@@ -1,16 +1,25 @@
 # Installation
 
+### Outline
+
+ 1. Download
+ 2. Extract and Move
+ 3. First Open
+ 4. Plugins Setup
+
 ### Download
 
-Navigate to the [releases]() page.  Download the files `AMP_renamed.dmg` and `plugins.zip`.
+Navigate to the [releases](releases) page.  Download the files `AMP_renamed.dmg` and `plugins.zip`.
 
 ![](pngs/releases_page.png)
 
-### Local setup
+### Extract and Move
 
 Open `AMP_renamed.dmg` and drag the `AMP` icon into the `Applications` folder.
 
 ![](pngs/drag_amp.png)
+
+### First Open
 
 Open the `Applications` folder in `Finder`.  Locate `AMP`, right-click, and select the 'Open' option.
 
@@ -21,6 +30,8 @@ When prompted with a warning about opening the software, select the 'Open Anyway
 ![](pngs/open_warning.png)
 
 `AMP`'s main viewer should appear, indicating that you have sucessfully installed `AMP`!
+
+### Plugins Setup
 
 Lastly, be sure to open/extract/unzip `plugins.zip`.  This is where the standard `AMP` plugins are
 kept to be loaded in.

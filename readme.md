@@ -2,13 +2,15 @@
 
 `AMP`, the Augmentable Mibi Pipeline, is a GUI environment for dynamically processing multiplexed
 image data via a configurable plugin-style architecture.  With no plugins active, AMP acts as a 
-simple image viewer.  For now, AMP's standard plugins will be directclones of those in MAUI.
+simple image viewer.  For now, AMP's standard plugins will be direct clones of those in MAUI.
+
+This project is under active development, so exact details of functionality are subject to change.
 
 ## Features
 
-- Quick 'whole-cohort' tiff viewing from main viewer
+- Easily view distinct channels of multiplexed image data
 - Loadable plugin interface for highly configurable data processing
-- Single executable; no need to run in any sort environment (MATLAB, docker, conda, etc)
+- Direct installation; doesn't require MATLAB, python, docker, etc.
 
 ### Current plugins
 

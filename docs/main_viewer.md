@@ -12,8 +12,50 @@ section of the upper taskbar.
 
 ![](./pngs/open_cohort.png)
 
-This will open a file explorer.  Navigate to the folder containing your images, select it, and 
-click the `Open` button.
+This will open a file explorer.  Selecting and opening a folder in this explorer will have `AMP`
+walk through the subdirectories within said folder until it finds the most shallow depth containing
+`.tif(f)` files.  It will then load the directory structure from the selected folder, through said 
+depth, into the `Files` section of the main viewer.
+
+For example, for selecting the folder `slide01` with structure:
+
+```
+slide01
+|
+|------- fov1
+|          |-------- TIFs
+|                     |-------- Au.tif
+|                     |-------- betacat.tif
+|                     ...
+|
+|------- fov2
+|          |-------- TIFs
+|                     |-------- Au.tif
+|                     ...
+...
+```
+
+will find all of the FOV's channels.  As a counter-example, selecting the folder `bad_slide01`:
+
+```
+bad_slide01
+|
+|------- fov1
+|          |-------- TIFs
+|                     |-------- Au.tif
+|                     |-------- betacat.tif
+|                     ...
+|
+|------- fov2
+|          |-------- TIFs
+|                     |-------- Au.tif
+|                     ...
+|
+|------- bad.tif
+...
+```
+
+will only load in tifs at the same file depth as `bad.tif`.
 
 <div 
     style="
@@ -24,16 +66,17 @@ click the `Open` button.
         background-color: #acf;
         color: #000"
 > 
-    <b><i>Note</i></b>:  Cohorts can be loaded from any file depth less than 6
+    <b><i>Note</i></b>:  The file explorer can only search for tifs at file depths less than 6,
+    relative to the selected folder.
 </div>
 
 ![](./pngs/cohort_file_explorer.png)
 
-If the cohort was successfully loaded, you should now see a file tree within the `Files` section of
-the main viewer.
+If the cohort was successfully loaded, you should now see a file tree within the `Files` section
+(1) of the main viewer.
 
 Clicking on displayed checkboxes will add a figure displaying that image to the `Figures` section
-of the viewer.
+(2) of the viewer.
 
 ![](./pngs/viewing.png)
 
@@ -62,8 +105,8 @@ the `Locked` checkbox to preserve separate contrast settings for each figure.
         background-color: #acf;
         color: #000"
 > 
-    <b><i>Note</i></b>:  This tool is under active development, so exact details on functionality
-    are subject to change.
+    <b><i>Note</i></b>:  Again, this tool is under active development, so exact details on
+    functionality are subject to change.
 </div>
 
 ![](./gifs/b_and_c_demo.gif)
@@ -71,6 +114,8 @@ the `Locked` checkbox to preserve separate contrast settings for each figure.
 #### Breakout Windows
 
 To move a figure to a separate window, press the `Breakout` button.
+
+![](./pngs/breakout.png)
 
 Deleting this window will move the figure back into the `Figures` list within the main viewer,
 where it can be deleted via the `Delete` button.

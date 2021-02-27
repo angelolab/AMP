@@ -11,3 +11,9 @@ build/
 dist/
 
 *.egg-info
+
+to_dmg/
+
+*.dmg
+
+plugins.zip
