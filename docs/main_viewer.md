@@ -70,7 +70,7 @@ will only load in tifs at the same file depth as `bad.tif`.
     relative to the selected folder.
 </div>
 
-![](./pngs/cohort_file_explorer.png)
+![]()
 
 If the cohort was successfully loaded, you should now see a file tree within the `Files` section
 (1) of the main viewer.
