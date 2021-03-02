@@ -1,6 +1,8 @@
+from re import sub
 from PyQt5 import QtWidgets, QtCore
 
 import os
+from pathlib import Path
 import sip
 
 from typing import List
@@ -12,6 +14,15 @@ class CohortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, parent: QtWidgets.QWidget = None, path: str = None) -> None:
         super().__init__(parent)
         self.path = path
+
+    def __hash__(self) -> int:
+        return hash(id(self))
+
+    def __eq__(self, x) -> bool:
+        return x is self
+
+    def __ne__(self, x) -> bool:
+        return x is not self
 
 
 class CohortTreeWidget(QtWidgets.QTreeWidget):
@@ -67,16 +78,33 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
              and '.tif' in entry.name]
         )
     # if tifs are found, delete unused directory nodes
-    # and configure tif objects
+    # TODO: check for mibitiff!
     if layer_tifs:
         [sip.delete(ltc for ltc in ld.takeChildren()) for ld in layer_dirs]
+
+        # trim layer of universal subdirs if present
+        first_lt_parent_name = Path(layer_tifs[0].path).parts[-2]
+        has_img_subdir = all(
+            [first_lt_parent_name == Path(lt.path).parts[-2] for lt in layer_tifs]
+        )
+        subdir_is_head = layer_tifs[0].parent().parent() is None
+        if has_img_subdir and not subdir_is_head:
+            img_subdirs= {lt.parent() for lt in layer_tifs}
+            for subdir in img_subdirs:
+                channels = subdir.takeChildren()
+                fov_head = subdir.parent()
+                fov_head.removeChild(subdir)
+                fov_head.addChildren(channels)
+                del subdir
+
+        # set tifs to be checkable
         for lt in layer_tifs:
             lt.setFlags(lt.flags() |
                         QtCore.Qt.ItemIsUserCheckable |
                         QtCore.Qt.ItemIsEnabled |
                         QtCore.Qt.ItemNeverHasChildren)
             lt.setCheckState(0, QtCore.Qt.Unchecked)
-            lt.setText(0, os.path.basename(lt.path))
+            lt.setText(0, os.path.basename(lt.path.split('.')[0]))
         return
     # if no tifs are found, repeat recursion
     else:
@@ -85,9 +113,13 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
         for ld in layer_dirs:
             if not ld.childCount():
                 head = ld.parent()
-                sip.delete(head.takeChild(head.indexOfChild(ld)))
+                if head is not None:
+                    sip.delete(head.takeChild(head.indexOfChild(ld)))
             else:
                 ld.setText(0, os.path.basename(ld.path))
                 ld.setFlags(ld.flags() & (~QtCore.Qt.ItemIsUserCheckable))
+                ld.sortChildren(0, 0)
         layer_dirs = [ld for ld in layer_dirs if ld]
+        for head in heads:
+            head.sortChildren(0, 0)
         return

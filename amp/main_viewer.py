@@ -179,7 +179,7 @@ class MainViewer(QtWidgets.QMainWindow):
         )
 
     def load_cohort(self) -> None:
-        """ Callback for loading files into main viewer
+        """ Callback for loading points into amp
         """
         flags = QtWidgets.QFileDialog.ShowDirsOnly
         folderpath = QtWidgets.QFileDialog.getExistingDirectory(self,
