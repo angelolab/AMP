@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>521</width>
-    <height>1043</height>
+    <height>1000</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,12 +16,19 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
+     <widget class="QLabel" name="label_7">
+      <property name="text">
+       <string>Source Channel Select</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QSplitter" name="splitter_10">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QComboBox" name="comboBox"/>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QComboBox" name="sourceSelect"/>
+      <widget class="QPushButton" name="addSourceButton">
        <property name="maximumSize">
         <size>
          <width>150</width>
@@ -35,19 +42,39 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="label_6">
+      <property name="text">
+       <string>Example Plot Point</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QComboBox" name="pointPlotSelect"/>
+    </item>
+    <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="pointTab">
        <attribute name="title">
-        <string>Tab 1</string>
+        <string>Points</string>
        </attribute>
-      </widget>
-      <widget class="QWidget" name="tab_2">
-       <attribute name="title">
-        <string>Tab 2</string>
-       </attribute>
+       <widget class="QTreeWidget" name="pointTree">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>501</width>
+          <height>351</height>
+         </rect>
+        </property>
+        <column>
+         <property name="text">
+          <string notr="true">1</string>
+         </property>
+        </column>
+       </widget>
       </widget>
      </widget>
     </item>
@@ -111,17 +138,29 @@
            <property name="handleWidth">
             <number>15</number>
            </property>
-           <widget class="QSlider" name="horizontalSlider_3">
+           <widget class="QSlider" name="blurSlider">
+            <property name="value">
+             <number>2</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
-           <widget class="QSpinBox" name="spinBox">
+           <widget class="QDoubleSpinBox" name="blurDoubleSpinBox">
             <property name="maximumSize">
              <size>
               <width>70</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="decimals">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <double>99.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>2.000000000000000</double>
             </property>
            </widget>
           </widget>
@@ -145,12 +184,18 @@
            <property name="handleWidth">
             <number>15</number>
            </property>
-           <widget class="QSlider" name="horizontalSlider_4">
+           <widget class="QSlider" name="threshSlider">
+            <property name="maximum">
+             <number>99</number>
+            </property>
+            <property name="value">
+             <number>20</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
-           <widget class="QSpinBox" name="spinBox_2">
+           <widget class="QDoubleSpinBox" name="threshDoubleSpinBox">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -162,6 +207,15 @@
               <width>70</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="maximum">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.050000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.200000000000000</double>
             </property>
            </widget>
           </widget>
@@ -185,17 +239,29 @@
            <property name="handleWidth">
             <number>15</number>
            </property>
-           <widget class="QSlider" name="horizontalSlider_5">
+           <widget class="QSlider" name="capSlider">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
-           <widget class="QSpinBox" name="spinBox_3">
+           <widget class="QSpinBox" name="capSpinBox">
             <property name="maximumSize">
              <size>
               <width>70</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
             </property>
            </widget>
           </widget>
@@ -280,17 +346,29 @@
            <property name="handleWidth">
             <number>15</number>
            </property>
-           <widget class="QSlider" name="horizontalSlider_6">
+           <widget class="QSlider" name="removeSlider">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>2</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
-           <widget class="QSpinBox" name="spinBox_4">
+           <widget class="QSpinBox" name="removeSpinBox">
             <property name="maximumSize">
              <size>
               <width>70</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>2</number>
             </property>
            </widget>
           </widget>
@@ -314,12 +392,18 @@
            <property name="handleWidth">
             <number>15</number>
            </property>
-           <widget class="QSlider" name="horizontalSlider_7">
+           <widget class="QSlider" name="evalcapSlider">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
-           <widget class="QSpinBox" name="spinBox_5">
+           <widget class="QSpinBox" name="evalcapSpinBox">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -332,12 +416,25 @@
               <height>16777215</height>
              </size>
             </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
            </widget>
           </widget>
          </item>
         </layout>
        </widget>
       </widget>
+     </widget>
+    </item>
+    <item alignment="Qt::AlignRight">
+     <widget class="QRadioButton" name="setAllTargetsButton">
+      <property name="text">
+       <string>Apply To All Targets</string>
+      </property>
      </widget>
     </item>
     <item>
@@ -361,18 +458,18 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QPushButton" name="pushButton_3">
+       <widget class="QPushButton" name="loadSettingsButton">
         <property name="text">
          <string>Load Settings</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="pushButton_4">
+       <widget class="QPushButton" name="saveSettingsButton">
         <property name="text">
          <string>Save Settings</string>
         </property>
        </widget>
       </widget>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="runRemovalButton">
        <property name="text">
         <string>Remove Background</string>
        </property>

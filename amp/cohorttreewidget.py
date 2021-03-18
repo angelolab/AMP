@@ -1,11 +1,13 @@
 from re import sub
 from PyQt5 import QtWidgets, QtCore
 
+import numpy as np
+from PIL import Image
 import os
 from pathlib import Path
 import sip
 
-from typing import List
+from typing import List, Set, Union, Any
 
 # Only supports single page tifs as of 6/22/2020
 
@@ -15,25 +17,131 @@ class CohortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         super().__init__(parent)
         self.path = path
 
+    def parent(self) -> 'CohortTreeWidgetItem':
+        return super().parent()
+
     def __hash__(self) -> int:
         return hash(id(self))
 
-    def __eq__(self, x) -> bool:
+    def __eq__(self, x: 'CohortTreeWidgetItem') -> bool:
         return x is self
 
-    def __ne__(self, x) -> bool:
+    def __ne__(self, x: 'CohortTreeWidgetItem') -> bool:
         return x is not self
+
+    def get_child_by_name(self, name: str) -> 'CohortTreeWidgetItem':
+        child_out = None
+        for index in range(self.childCount()):
+            child = self.child(index)
+            if child.text(0) == name:
+                child_out = child
+                break
+        return child_out
+
+    def get_image_data(self) -> Union[Any, None]:
+        if self.path.endswith(('.tif', '.tiff')):
+            return np.array(Image.open(self.path))
+        else:
+            return None
+
+    def write_image_data(self, new_data: Any) -> None:
+        """ writes image data to saved path
+
+        Args:
+            new_data (np.array):
+                image data to write out to file
+        """
+
+        if self.path.endswith(('.tif', '.tiff')):
+            Image.fromarray(new_data.astype(np.uint8)).save(self.path)
+        else:
+            return
 
 
 class CohortTreeWidget(QtWidgets.QTreeWidget):
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
+        self.channels: Set[str] = set()
+        self.head: CohortTreeWidgetItem = None
 
     def load_cohort(self, cohort_head: str) -> None:
         # list lowest depth tifs
-        head = CohortTreeWidgetItem(self, cohort_head)
-        head.setText(0, os.path.basename(cohort_head))
-        tif_bfs([head])
+        self.head = CohortTreeWidgetItem(self, cohort_head)
+        self.head.setText(0, os.path.basename(cohort_head))
+        self.channels = tif_bfs([self.head])
+
+    def get_channels(self) -> List[str]:
+        return list(self.channels)
+
+    def get_item(self, tree_path: str) -> CohortTreeWidgetItem:
+        """ Indexes through provided tree path and returns reference to a widget item
+
+        Args:
+            tree_path (str): filepath like string indexing into the tree
+
+        Returns:
+            CohortTreeWidgetItem:
+                reference to desired point
+        """
+        # print(Path(tree_path).parts)
+        current_node = self.head
+        for i, part in enumerate(Path(tree_path).parts):
+            if i > 0:
+                current_node = current_node.get_child_by_name(part)
+
+            if current_node is None or current_node.text(0) != part:
+                return None
+
+        return current_node
+
+    def gen_quickview(self, all_checkable: bool = True,
+                      include_channels: bool = False) -> QtWidgets.QTreeWidgetItem:
+        """ Generates a default tree view of the cohort.  Useful for passing to plugins for viewing
+        and selection purposes.
+
+        Args:
+            all_checkable (bool):
+                Add checkbox to every item
+            include_channels (bool):
+                Include channels in tree view
+
+        Returns:
+            QtWidgets.QTreeWidgetItem:
+                reference to top level item
+
+        """
+
+        # create deep copy
+        head_out = self.head.clone()
+
+        if all_checkable:
+            add_checks([head_out], self.channels if not include_channels else None)
+
+        return head_out
+
+def add_checks(heads: List[QtWidgets.QTreeWidgetItem], excludes: Union[Set[str], None]) -> None:
+    """ Recursively adds checks to all members of the tree widget
+
+    Args:
+        heads (List[QtWidgets.QTreeWidgetItem]):
+            widgets to initiate recursion from
+        excludes (Set[str]):
+            widgets will be excluded if their text is in this set
+    """
+
+    for head in heads:
+        head.setFlags(head.flags() |
+                      QtCore.Qt.ItemIsUserCheckable |
+                      QtCore.Qt.ItemIsEnabled)
+        head.setCheckState(0, QtCore.Qt.Unchecked)
+
+        if excludes is not None:
+            for child in [head.child(index) for index in range(head.childCount())]:
+                if child.text(0) in excludes:
+                    head.removeChild(child)
+                    del child
+
+        add_checks([head.child(index) for index in range(head.childCount())], excludes)
 
 
 def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
@@ -58,6 +166,7 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
     """
     if max_depth <= 1:
         return []
+    channels: Set[str] = set()
     layer_dirs: List[CohortTreeWidgetItem] = []
     layer_tifs: List[CohortTreeWidgetItem] = []
     # build search space for next recursion
@@ -91,10 +200,10 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
         if has_img_subdir and not subdir_is_head:
             img_subdirs= {lt.parent() for lt in layer_tifs}
             for subdir in img_subdirs:
-                channels = subdir.takeChildren()
+                channels_obj = subdir.takeChildren()
                 fov_head = subdir.parent()
                 fov_head.removeChild(subdir)
-                fov_head.addChildren(channels)
+                fov_head.addChildren(channels_obj)
                 del subdir
 
         # set tifs to be checkable
@@ -104,11 +213,14 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
                         QtCore.Qt.ItemIsEnabled |
                         QtCore.Qt.ItemNeverHasChildren)
             lt.setCheckState(0, QtCore.Qt.Unchecked)
-            lt.setText(0, os.path.basename(lt.path.split('.')[0]))
-        return
+            channel_name = os.path.basename(lt.path.split('.')[0])
+            channels.add(channel_name)
+            lt.setText(0, channel_name)
+
+        return channels
     # if no tifs are found, repeat recursion
     else:
-        tif_bfs(layer_dirs, max_depth-1)
+        channels = tif_bfs(layer_dirs, max_depth-1)
         # delete directories with no children and configure the rest
         for ld in layer_dirs:
             if not ld.childCount():
@@ -122,4 +234,4 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
         layer_dirs = [ld for ld in layer_dirs if ld]
         for head in heads:
             head.sortChildren(0, 0)
-        return
+        return channels
