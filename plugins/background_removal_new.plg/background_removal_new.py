@@ -126,6 +126,10 @@ class BackgroundRemovalNew(QtWidgets.QMainWindow):
         self.pointPlotSelect.currentIndexChanged.connect(lambda x: self.refocus_plots())
         self.tabWidget.currentChanged.connect(lambda x: self.refocus_plots())
 
+        # toggle channel settings update mode
+        self.set_all_targets = False
+        self.setAllTargetsButton.clicked.connect(self.toggle_settings_mode)
+
         # add settings callbacks
         self.saveSettingsButton.clicked.connect(self.save_settings)
         self.loadSettingsButton.clicked.connect(self.load_settings)
@@ -381,7 +385,12 @@ class BackgroundRemovalNew(QtWidgets.QMainWindow):
 
         # conditionally update source/target parameters
         if source_channel == self.current_source and target_channel == self.current_target:
-            self.settings[source_channel][target_channel] = self.get_params()
+            if self.set_all_targets:
+                params = self.get_params()
+                for target in self.settings[source_channel].keys():
+                    self.settings[source_channel][target] = params
+            else:
+                self.settings[source_channel][target_channel] = self.get_params()
         else:
             self.set_params(self.settings[source_channel][target_channel])
 
@@ -483,6 +492,16 @@ class BackgroundRemovalNew(QtWidgets.QMainWindow):
         processed_channel[processed_channel > params['evalcap']] = params['evalcap']
 
         return unprocessed_channel, processed_channel
+
+    def toggle_settings_mode(self, mode: bool) -> None:
+        """ toggles the 'set all targets' option
+
+        Args:
+            mode (bool):
+                value for 'set all targets' option
+
+        """
+        self.set_all_targets = mode        
 
     def save_settings(self) -> None:
         """ write background removal settings out to json
