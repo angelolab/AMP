@@ -2,12 +2,14 @@ from re import sub
 from PyQt5 import QtWidgets, QtCore
 
 import numpy as np
-from PIL import Image
+import skimage.io as io
 import os
 from pathlib import Path
 import sip
 
 from typing import List, Set, Union, Any
+
+import amp.tiff_utils as tiff_utils
 
 # Only supports single page tifs as of 6/22/2020
 
@@ -16,6 +18,7 @@ class CohortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, parent: QtWidgets.QWidget = None, path: str = None) -> None:
         super().__init__(parent)
         self.path = path
+        self.is_mibitiff = tiff_utils.is_mibitiff(path.split('|')[0])
 
     def parent(self) -> 'CohortTreeWidgetItem':
         return super().parent()
@@ -39,8 +42,15 @@ class CohortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         return child_out
 
     def get_image_data(self) -> Union[Any, None]:
-        if self.path.endswith(('.tif', '.tiff')):
-            return np.array(Image.open(self.path))
+        if '.tif' in self.path:
+            if self.is_mibitiff and len(self.path.split('|')) > 1:
+                img_data, _ = tiff_utils.read_mibitiff(
+                    self.path.split('|')[0],
+                    channels=[self.path.split('|')[1]]
+                )
+                return img_data[:, :, 0]
+            else:
+                return io.imread(self.path)
         else:
             return None
 
@@ -52,8 +62,11 @@ class CohortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
                 image data to write out to file
         """
 
-        if self.path.endswith(('.tif', '.tiff')):
-            Image.fromarray(new_data.astype(np.uint8)).save(self.path)
+        if '.tif' in self.path:
+            if self.is_mibitiff and len(self.path.split('|')) > 1:
+                tiff_utils.overwrite_mibitiff_channel(*self.path.split('|'), new_data)
+            else:
+                io.imsave(self.path, new_data.astype(np.uint8), plugin='tifffile')
         else:
             return
 
@@ -187,7 +200,6 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
              and '.tif' in entry.name]
         )
     # if tifs are found, delete unused directory nodes
-    # TODO: check for mibitiff!
     if layer_tifs:
         [sip.delete(ltc for ltc in ld.takeChildren()) for ld in layer_dirs]
 
@@ -206,16 +218,34 @@ def tif_bfs(heads: List[CohortTreeWidgetItem], max_depth: int = 6) -> None:
                 fov_head.addChildren(channels_obj)
                 del subdir
 
-        # set tifs to be checkable
+        # check for mibitiff and set channels to be checkable
         for lt in layer_tifs:
-            lt.setFlags(lt.flags() |
+            if tiff_utils.is_mibitiff(lt.path):
+                _ , tif_channels = tiff_utils.read_mibitiff(lt.path)
+                layer_channels = [
+                    CohortTreeWidgetItem(lt, f"{lt.path}|{tif_channel[1].replace('|', '_')}")
+                    for tif_channel in tif_channels
+                ]
+                # redundant iteration (easier to read imo)
+                for lc in layer_channels:
+                    lc.setFlags(lc.flags() |
                         QtCore.Qt.ItemIsUserCheckable |
                         QtCore.Qt.ItemIsEnabled |
                         QtCore.Qt.ItemNeverHasChildren)
-            lt.setCheckState(0, QtCore.Qt.Unchecked)
-            channel_name = os.path.basename(lt.path.split('.')[0])
-            channels.add(channel_name)
-            lt.setText(0, channel_name)
+                    lc.setCheckState(0, QtCore.Qt.Unchecked)
+                    channel_name = os.path.basename(lc.path.split('|')[1])
+                    channels.add(channel_name)
+                    lc.setText(0, channel_name)
+                    lt.setText(0, os.path.basename(lt.path))
+            else:
+                lt.setFlags(lt.flags() |
+                            QtCore.Qt.ItemIsUserCheckable |
+                            QtCore.Qt.ItemIsEnabled |
+                            QtCore.Qt.ItemNeverHasChildren)
+                lt.setCheckState(0, QtCore.Qt.Unchecked)
+                channel_name = os.path.basename(lt.path.split('.')[0])
+                channels.add(channel_name)
+                lt.setText(0, channel_name)
 
         return channels
     # if no tifs are found, repeat recursion

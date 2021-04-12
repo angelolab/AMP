@@ -2,22 +2,17 @@
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
 from PyQt5 import QtWidgets, QtCore, uic
 
-from amp.mplwidget import ImagePlot, Plot
-from amp.point import Point
 from amp.main_viewer import MainViewer
-from amp.resource_path import resource_path
+from amp.mplwidget import ImagePlot
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from PIL import Image
 
 import os
-import pathlib
-import concurrent.futures
-from datetime import datetime
+import shutil
+import json
 
-from typing import Dict, List, Any, Union, Tuple
-import numbers
+from typing import Tuple, List, Dict, Any, Union
 
 
 class BackgroundRemoval(QtWidgets.QMainWindow):
@@ -26,51 +21,50 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
         self.menubar: QtWidgets.QMenuBar
-        self.runEvalCapVal: QtWidgets.QLabel
-        self.label_9: QtWidgets.QLabel
-        self.runRemoveVal: QtWidgets.QLabel
-        self.label_14: QtWidgets.QLabel
-        self.runBackCapVal: QtWidgets.QLabel
-        self.label_12: QtWidgets.QLabel
-        self.runThreshVal: QtWidgets.QLabel
-        self.label_10: QtWidgets.QLabel
-        self.runGausRadiusVal: QtWidgets.QLabel
-        self.label_8: QtWidgets.QLabel
-        self.runBackgroundButton: QtWidgets.QPushButton
-        self.runLoadButton: QtWidgets.QPushButton
-        self.runGroup: QtWidgets.QGroupBox
-        self.eparamsTable: QtWidgets.QTableWidget
-        self.eparamsEvalAllButton: QtWidgets.QPushButton
-        self.eparamsEvalButton: QtWidgets.QPushButton
-        self.eparamsEvalCapBox: QtWidgets.QDoubleSpinBox
-        self.label_7: QtWidgets.QLabel
-        self.eparamsRemoveBox: QtWidgets.QDoubleSpinBox
-        self.label_6: QtWidgets.QLabel
-        self.eparamsPointSelect: QtWidgets.QComboBox
+        self.runRemovalButton: QtWidgets.QPushButton
+        self.saveSettingsButton: QtWidgets.QPushButton
+        self.loadSettingsButton: QtWidgets.QPushButton
+        self.splitter_8: QtWidgets.QSplitter
+        self.splitter_9: QtWidgets.QSplitter
+        self.setAllTargetsButton: QtWidgets.QRadioButton
+        self.evalcapSpinBox: QtWidgets.QSpinBox
+        self.evalcapSlider: QtWidgets.QSlider
+        self.splitter_7: QtWidgets.QSplitter
         self.label_5: QtWidgets.QLabel
+        self.layoutWidget_4: QtWidgets.QWidget
+        self.removeSpinBox: QtWidgets.QSpinBox
+        self.removeSlider: QtWidgets.QSlider
+        self.splitter_6: QtWidgets.QSplitter
         self.label_4: QtWidgets.QLabel
-        self.eparamsChannelSelect: QtWidgets.QComboBox
-        self.eparamsReloadButton: QtWidgets.QPushButton
-        self.eparamsDeleteButton: QtWidgets.QPushButton
-        self.eparamsGroup: QtWidgets.QGroupBox
-        self.rparamsReloadButton: QtWidgets.QPushButton
-        self.rparamsDeleteButton: QtWidgets.QPushButton
-        self.rparamsTable: QtWidgets.QTableWidget
-        self.rparamsReuseButton: QtWidgets.QRadioButton
-        self.rparamsTestButton: QtWidgets.QPushButton
-        self.rparamsGausRadiusBox: QtWidgets.QDoubleSpinBox
-        self.label_2: QtWidgets.QLabel
+        self.layoutWidget_3: QtWidgets.QWidget
+        self.splitter_5: QtWidgets.QSplitter
+        self.groupBox_2: QtWidgets.QGroupBox
+        self.capSpinBox: QtWidgets.QSpinBox
+        self.capSlider: QtWidgets.QSlider
+        self.splitter_3: QtWidgets.QSplitter
         self.label_3: QtWidgets.QLabel
-        self.rparamsBackCapBox: QtWidgets.QDoubleSpinBox
+        self.layoutWidget_2: QtWidgets.QWidget
+        self.threshDoubleSpinBox: QtWidgets.QDoubleSpinBox
+        self.threshSlider: QtWidgets.QSlider
+        self.splitter_2: QtWidgets.QSplitter
+        self.label_2: QtWidgets.QLabel
+        self.layoutWidget: QtWidgets.QWidget
+        self.blurDoubleSpinBox: QtWidgets.QDoubleSpinBox
+        self.blurSlider: QtWidgets.QSlider
+        self.splitter: QtWidgets.QSplitter
         self.label: QtWidgets.QLabel
-        self.rparamsThreshBox: QtWidgets.QDoubleSpinBox
-        self.rparamsGroup: QtWidgets.QGroupBox
-        self.loadingReuseButton: QtWidgets.QRadioButton
-        self.loadingPointsList: QtWidgets.QListWidget
-        self.loadingChannelSelect: QtWidgets.QComboBox
-        self.loadingRemoveButton: QtWidgets.QPushButton
-        self.loadingAddButton: QtWidgets.QPushButton
-        self.loadingGroup: QtWidgets.QGroupBox
+        self.layoutWidget_0: QtWidgets.QWidget
+        self.splitter_4: QtWidgets.QSplitter
+        self.groupBox: QtWidgets.QGroupBox
+        self.pointTree: QtWidgets.QTreeWidget
+        self.pointTab: QtWidgets.QWidget
+        self.tabWidget: QtWidgets.QTabWidget
+        self.pointPlotSelect: QtWidgets.QComboBox
+        self.label_6: QtWidgets.QLabel
+        self.addSourceButton: QtWidgets.QPushButton
+        self.sourceSelect: QtWidgets.QComboBox
+        self.splitter_10: QtWidgets.QSplitter
+        self.label_7: QtWidgets.QLabel
         self.centralwidget: QtWidgets.QWidget
         # end typedef - DO NOT MANUALLY EDIT ABOVE
 
@@ -79,54 +73,101 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         # set reference to main window
         self.main_viewer = main_viewer
 
-        # points dict (indexed by path)
-        self.points: Dict[str, Point] = {}
-
-        # reusable figure id's
-        self.preview_id: int = None
-        self.br_reuse_id: int = None
-
-        # load ui elements into MainViewer class
+        # load ui elements
         uic.loadUi(
             ui_path,
             self
         )
 
-        # General UI threadpool (probably shouldn't use this for big algos)
-        self.executer = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        # TODO: move this (and channels) into a refresh function (callable by main viewer that way)
+        # load point tree from main_viewer into pointTree
+        self.pointTree.addTopLevelItem(
+            main_viewer.CohortTreeWidget.gen_quickview()
+        )
 
-        # connect UI callbacks
-        self.loadingAddButton.clicked.connect(self.on_add_point)
-        self.loadingPointsList.currentItemChanged.connect(self.on_point_change)
-        self.loadingChannelSelect.currentTextChanged.connect(self.on_channel_change)
-        self.loadingRemoveButton.clicked.connect(self.on_remove_point)
+        # TODO: see above
+        self.channels: List[str] = main_viewer.CohortTreeWidget.get_channels()
+        if self.channels is not None:
+            self.sourceSelect.addItems(
+                sorted(self.channels)
+            )
 
-        # background mask generation UI callbacks
-        self.rparamsTestButton.clicked.connect(self.test_br_params)
-        self.rparamsDeleteButton.clicked.connect(self.remove_br_params)
-        self.rparamsReloadButton.clicked.connect(self.reload_br_params)
+        # connect callbacks
+        self.pointTree.itemChanged.connect(self.on_point_toggle)
+        
+        # connect sliders and spin boxes
+        spin_slider_pairs: List[Tuple[QtWidgets.QSpinBox, QtWidgets.QSlider]] = \
+            [
+                (self.blurDoubleSpinBox, self.blurSlider),
+                (self.threshDoubleSpinBox, self.threshSlider),
+                (self.capSpinBox, self.capSlider),
+                (self.removeSpinBox, self.removeSlider),
+                (self.evalcapSpinBox, self.evalcapSlider),
+            ]
+        # assumes minimum is always 0
+        for spin_box, slider in spin_slider_pairs:
+            def spinbox_change(spi=spin_box, sli=slider):
+                sli.setValue(
+                    round(float(sli.maximum()) * spi.value() / spi.maximum())
+                )
+                self.refocus_plots()
 
-        # arrow key + click support for mask generation params table
-        self.rparamsTable.cellClicked.connect(self.br_cell_click)
-        self.rparamsTable.currentCellChanged.connect(self.br_cell_change)
+            def slider_change(x, spi=spin_box, sli=slider) -> None:
+                spi.setValue(spi.maximum() * float(x) / float(sli.maximum()))
 
-        # removal evaluation UI callbacks
-        self.eparamsPointSelect.currentTextChanged.connect(self.on_eparams_point_change)
-        self.eparamsEvalButton.clicked.connect(self.on_eval_click)
-        self.eparamsEvalAllButton.clicked.connect(self.on_eval_all_click)
-        self.eparamsDeleteButton.clicked.connect(self.remove_ev_params)
-        self.eparamsReloadButton.clicked.connect(self.reload_ev_params)
+            spin_box.editingFinished.connect(spinbox_change)
+            slider.valueChanged.connect(slider_change)
+            slider.sliderReleased.connect(self.refocus_plots)
 
-        # arrow key + click support for removal evaluation params table
-        # self.eparamsTable.cellClicked.connect()
-        # self.eparamsTable.currentCellChanged.connect()
+        # set up source tab callbacks
+        self.addSourceButton.clicked.connect(self.on_add_source)
 
-        self.runLoadButton.clicked.connect(self.on_load_params)
-        self.runBackgroundButton.clicked.connect(self.on_run_background)
+        # add plot point select callback
+        self.pointPlotSelect.currentIndexChanged.connect(lambda x: self.refocus_plots())
+        self.tabWidget.currentChanged.connect(lambda x: self.refocus_plots())
 
-        self.loaded_params = {}
+        # toggle channel settings update mode
+        self.set_all_targets = False
+        self.setAllTargetsButton.clicked.connect(self.toggle_settings_mode)
 
-        self.setWindowTitle("Background Removal")
+        # add settings callbacks
+        self.saveSettingsButton.clicked.connect(self.save_settings)
+        self.loadSettingsButton.clicked.connect(self.load_settings)
+
+        # add remove background callback
+        self.runRemovalButton.clicked.connect(self.remove_background)
+
+        # initialize settings and extract default alg params
+        self.settings: Dict[str, Dict[str, Dict]] = {}
+
+        # prevents figure gen during settings load
+        self.prevent_plotting: bool = False
+
+        self.figure_ids = {
+            'source_preview': None,
+            'background_mask': None,
+            'target_preview': None,
+            'target_no_background': None,
+        }
+
+        self.spin_boxes: Dict[str, QtWidgets.QSpinBox] = {
+            'blur': self.blurDoubleSpinBox,
+            'thresh': self.threshDoubleSpinBox,
+            'cap': self.capSpinBox,
+            'remove': self.removeSpinBox,
+            'evalcap': self.evalcapSpinBox,
+        }
+
+        # Use these to determine figure refocus
+        self.current_point = None
+        self.current_source = None
+        self.current_target = None
+
+        # Cache source and target data (prevents needless file reads)
+        self.source_data = None
+        self.target_data = None
+
+        self.setWindowTitle("Background Removal New")
 
     # closeEvent is reserved by pyqt so it can't follow style guide :/
     def closeEvent(self, event: QtCore.QEvent) -> None:
@@ -138,855 +179,418 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             event (QtCore.QEvent): qt close event (passed via signal)
         """
 
-        while len(self.points) > 0:
-            self.on_remove_point()
-
         event.accept()
 
-    # TODO: Change Any's to np.ndarray when numpy 1.20 is released
-    def _get_point_channel_data(self, point_name: str, channel_name: str) -> Any:
-        """ Helper function for accessing channel data in point
+    def get_params(self) -> Dict:
+        """ Get parameter settings
+        """
+        return {
+            'blur': self.blurDoubleSpinBox.value(),
+            'thresh': self.threshDoubleSpinBox.value(),
+            'cap': self.capSpinBox.value(),
+            'remove': self.removeSpinBox.value(),
+            'evalcap': self.evalcapSpinBox.value(),
+        }
 
-        Args:
-            point_name (str): key for point in points dictionary
-            channel_name (str): name of channel within point
-
-        Returns:
-            channel_data (numpy.ndarray): image data for given point's given channel
+    def set_params(self, params: Dict) -> None:
+        """ Set parameters
         """
 
-        return self.points[point_name].get_channel_data(chans=[channel_name])[channel_name]
-
-    def on_add_point(self) -> None:
-        """ Callback for Add Point button
-
-        Checks for point existence and adds it to loadingPointsList
-        """
-
-        # point_path = QtWidgets.QFileDialog.getExistingDirectory(self,
-        #                                                         'Open',
-        #                                                         '~')
-
-        # alter file_dialog to make it possible to select multiple directories
-        paths = []
-
-        file_dialog = QtWidgets.QFileDialog()
-        file_dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
-        file_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
-        file_view = file_dialog.findChild(QtWidgets.QListView, 'listView')
-
-        if file_view:
-            file_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-        f_tree_view = file_dialog.findChild(QtWidgets.QTreeView)
-        if f_tree_view:
-            f_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-
-        if file_dialog.exec():
-            paths = file_dialog.selectedFiles()
-
-        # iterate over selected points
-        for point in paths:
-            point_name = pathlib.Path(point).name
-            print(f'{point_name}: {point}')
-
-            # find tif subdir (allow only one extra tif depth)
-            tif_subdir = None
-            for subdir in os.listdir(point):
-                subdir_path = os.path.join(point, subdir)
-                if (
-                    os.path.isdir(subdir_path)
-                    and any(['.tif' in f for f in os.listdir(subdir_path)])
-                ):
-                    tif_subdir = subdir_path
-                    break
-
-            if tif_subdir is None:
-                print(f'{point_name} didn\'t contain any TIF subdirectories')
+        # setting + unsetting focus here to force a call to 'editingFinished'
+        for param_name, param_value in params.items():
+            # prevents redundant signal chaining
+            if self.spin_boxes[param_name].value() == param_value:
                 continue
+            self.spin_boxes[param_name].setFocus()
+            self.spin_boxes[param_name].setValue(param_value)
+            self.spin_boxes[param_name].clearFocus()
 
-            tifs = os.listdir(tif_subdir)
-            tifs = [tif
-                    for tif in tifs
-                    if tif.split('.')[-1] in ['tif', 'tiff']]
+    def update_figures(self, new_figures: Dict[str, Tuple[str, ImagePlot]]) -> None:
+        """Adds or updates relevant figures with supplied plot object
 
-            if (
-                tifs
-                and not self.loadingPointsList.findItems(
-                    point,
-                    QtCore.Qt.MatchExactly
+        Args:
+            new_figures (Dict[str, (str, mplwidget.ImagePlot)]):
+                Map from internal figure names to new plot objects (and name)
+        """
+        for internal_figure_name, (figure_name, figure_data) in new_figures.items():
+            if self.figure_ids.get(internal_figure_name) is not None:
+                self.main_viewer.figures.update_figure(
+                    self.figure_ids.get(internal_figure_name), figure_data,
+                    figure_name
                 )
-            ):
-                self.points[point_name] = Point(point_name, tif_subdir, tifs)
-                self.loadingPointsList.addItem(point_name)
-                self.eparamsPointSelect.addItem(point_name)
-
-    def _gen_preview_fig_name(self, point_name: str, channel_name: str) -> str:
-        """Generates pretty figure names for preview images
-
-        Args:
-            point_name (str):
-                Path like string to TIFs directory of FOV
-            channel_name (str):
-                Name of channel (with or without .tif(f))
-
-        Returns:
-            str:
-                Pretty figure name for background image
-        """
-
-        reduced_channel_name = channel_name.split('.')[0]
-        return f"{point_name} channel {reduced_channel_name}"
-
-    def _gen_mask_fig_name(self, point_name: str, channel_name: str,
-                           br_params: List[numbers.Number]) -> str:
-        """Generates pretty figure names for background mask images
-
-        Args:
-            point_name (str):
-                Path like string to TIFs directory of FOV
-            channel_name (str):
-                Name of channel (with or without .tif(f))
-            br_pararms (list):
-                Parameters used for mask generation
-
-        Returns:
-            str:
-                Pretty figure name for background mask image
-        """
-
-        reduced_channel_name = channel_name.split('.')[0]
-        return f"{point_name} channel {reduced_channel_name} mask {br_params}"
-
-    def _gen_eval_fig_names(self, point_name: str, eval_channel: str,
-                            params: List[numbers.Number]) -> Tuple[str, str]:
-        """Generates pretty figure names for before/after evaluation images
-
-        Args:
-            point_name (str):
-                Path like string to TIFs directory of FOV
-            eval_channel (str):
-                Name of channel (with or without .tif(f))
-            params (list):
-                Parameters used for mask generation
-
-        Returns:
-            Tuple[str, str]:
-                Before and after names for figures
-        """
-
-        reduced_channel_name = eval_channel.split('.')[0]
-        return f"{point_name} - {reduced_channel_name} Before", \
-               f"{point_name} - {reduced_channel_name} After {params}"
-
-    def _add_update_figure(self, figure_id: Union[int, None], current_point: str, im_plot: Plot,
-                           plot_name: str,
-                           reuse_button: QtWidgets.QRadioButton = None) -> int:
-        """Adds or updates a figure id with supplied plot object
+            else:
+                self.figure_ids[internal_figure_name] = \
+                    self.main_viewer.figures.add_figure(
+                        figure_data, figure_name, self.clear_figure_id
+                    )
+    
+        self.main_viewer.refresh_plots()
+    
+    def clear_figure_id(self, figure_id: int) -> None:
+        """ Finds and clears figure id
 
         Args:
             figure_id (int):
-                Previous figure id.  If None, a new figure id will be retrieved from figure manager
-            current_point (str):
-                Key for current point in points dictionary
-            im_plot (mplwidget.Plot):
-                Image plot object for the new/updated figure
-            plot_name (str):
-                Name displayed in the plot list for the figure.
-            reuse_button (QtWidgets.QRadioButton | None):
-                Button which determines 'reuse' or updating behavior between different points.
-                If None, figures will be exclusively added w/o updating. Default is None.
-
-        Returns:
-            int:
-                New/updated figure id for generated figure.
+                Figure id to search for
         """
+        self.main_viewer.figures.remove_figure(figure_id)
+        for stored_name, stored_id in self.figure_ids.items():
+            if stored_id == figure_id:
+                self.figure_ids[stored_name] = None
+                return
 
-        is_checked = False
-        if reuse_button is not None:
-            is_checked = reuse_button.isChecked()
+    def on_point_toggle(self, item: QtWidgets.QTreeWidgetItem, column: int) -> None:
+        """ Callback for toggling point selection
 
-        if figure_id is not None and is_checked:
-            if figure_id not in self.points[current_point].figure_ids:
-                for point in self.points.values():
-                    point.safe_remove_figure_id(figure_id)
-                self.points[current_point].add_figure_id(figure_id)
-            self.main_viewer.figures.update_figure(figure_id, im_plot, plot_name)
+        Adds/removes points to background removal queue
+
+        Args:
+            item (QtWidgets.QTreeWidgetItme):
+                toggled widget item
+            column (int):
+                mandatory unused argument in signal
+        """
+        if item.childCount() == 0:
+            # a bit inefficient here (e.g dynamic programming could help)
+            treepath = ''
+            node = item
+            while node is not None:
+                treepath = '/' + node.text(0) + treepath
+                node = node.parent()
+            # remove prepended '/'
+            treepath = treepath[1:]
+
+            index = self.pointPlotSelect.findText(treepath)
+            if index < 0 and item.checkState(0):
+                self.pointPlotSelect.addItem(treepath)
+            elif index >= 0 and not item.checkState(0):
+                self.pointPlotSelect.removeItem(index)
+
         else:
-            figure_id = self.main_viewer.figures.add_figure(im_plot, plot_name,
-                                                            self._safe_clear_figure_id)
-            self.points[current_point].add_figure_id(figure_id)
-        return figure_id
+            for child in [item.child(index) for index in range(item.childCount())]:
+                child.setCheckState(0, item.checkState(0))
 
-    def _safe_clear_figure_id(self, figure_id: int) -> None:
-        """Safely removes a given figure.  Used as part of `PlotListWidgetItem.delete_callback`
-
-        Args:
-            figure_id (int):
-                Figure ID for removal
+    def on_add_source(self) -> None:
+        """ Callback for adding new source channel
         """
 
-        if figure_id == self.preview_id:
-            self.preview_id = None
-        if figure_id == self.br_reuse_id:
-            self.br_reuse_id = None
+        # get currently selected channel
+        channel = self.sourceSelect.currentText()
+        # check if tab already exists!
+        if channel not in [self.tabWidget.tabText(t) for t in range(self.tabWidget.count())]:
+            # create target channel list
+            self.settings[channel] = {}
+            self.tabWidget.addTab(self.generate_new_target_list(channel), channel)
 
-        # check all points
-        for point in self.points.values():
-            point.safe_remove_figure_id(figure_id)
-
-    def on_point_change(self, current: QtWidgets.QListWidgetItem,
-                        previous: QtWidgets.QListWidgetItem) -> None:
-        """ Callback for changing point selection in point list
-
-        Reset's channel selection box options, updates plots, and refills
-        parameter tables using saved points data
-
+    def generate_new_target_list(self, channel: str) -> QtWidgets.QListWidget:
+        """ Generates new checkable list of target channels
+        
         Args:
-            current: newly selected point
-            previous: previously selected point
+            channel (str):
+                channel used for callback setting
+        """
+        target_list = QtWidgets.QListWidget()
+        target_list.addItems(self.channels)
+        for item in [target_list.item(i) for i in range(len(self.channels))]:
+            item.setFlags(item.flags() |
+                      QtCore.Qt.ItemIsUserCheckable |
+                      QtCore.Qt.ItemIsEnabled)
+            item.setCheckState(QtCore.Qt.Unchecked)
+        target_list.sortItems(0)
+
+        # define and set callbacks
+        def target_list_changed_callback(item: QtWidgets.QListWidgetItem) -> None:
+            if self.prevent_plotting:
+                return
+
+            if item.checkState():
+                # init settings and refocus plots
+                self.settings[channel][item.text()] = self.get_params()
+                if item.text() != self.current_target or channel != self.current_source:
+                    # set item to current
+                    item.listWidget().setCurrentItem(item)
+                    self.refocus_plots()
+                    self.current_target = item.text()
+                    self.current_source = channel
+
+            else:
+                # clean up removal settings
+                self.settings[channel].pop(item.text())
+                self.current_target = item.text()
+                self.current_source = channel
+
+        # refocus plots if called
+        def target_list_clicked_callback(item: QtWidgets.QListWidgetItem, settings=self.settings) -> None:
+            if self.prevent_plotting:
+                return
+
+            if item.checkState():
+                # load settings if they exist
+                if channel in settings.keys():
+                    if item.text() in settings[channel].keys():
+                        self.set_params(settings[channel][item.text()])
+                if item.text() != self.current_target or channel != self.current_source:
+                    self.refocus_plots()
+                    self.current_target = item.text()
+                    self.current_source = channel
+
+        target_list.itemChanged.connect(target_list_changed_callback)
+        target_list.itemClicked.connect(target_list_clicked_callback)
+
+        return target_list
+
+    def refocus_plots(self) -> None:
+        """ Detect point, source channel, and target channel active and replot
         """
 
-        if current is None:
-            # unset set combo box
-            self.loadingChannelSelect.clear()
+        if self.prevent_plotting:
             return
 
-        # set channels combo box
-        comboChannel = self.loadingChannelSelect.currentText()
-        self.loadingChannelSelect.clear()
-        if comboChannel in self.points[current.text()].get_channel_names():
-            self.loadingChannelSelect.addItem(comboChannel)
-            self.loadingChannelSelect.addItems(
-                [channel
-                 for channel in self.points[current.text()].get_channel_names()
-                 if channel != comboChannel]
+        figure_updates = {}
+
+        # get point
+        point_path = self.pointPlotSelect.currentText()
+        if point_path == '' or point_path is None:
+            return
+
+        source_channel = self.tabWidget.tabText(self.tabWidget.currentIndex())
+
+        if source_channel == 'Points':
+            self.current_point = point_path
+            return
+
+        # refresh raw source channel plot
+        if (point_path != self.current_point 
+            or source_channel != self.current_source
+            or self.source_data is None):
+
+            self.source_data = self.main_viewer.CohortTreeWidget.get_item(
+                f'{point_path}/{source_channel}'
+            ).get_image_data()
+
+            figure_updates['source_preview'] = (
+                f"{point_path.split('/')[-1]} channel: {source_channel}",
+                ImagePlot(self.source_data)
             )
-        else:
-            self.loadingChannelSelect.addItems(
-                self.points[current.text()].get_channel_names()
-            )
 
-        # gen/update plots
-        new_channel = self.loadingChannelSelect.currentText()
+        active_tab: QtWidgets.QListWidget = self.tabWidget.currentWidget()
+        target_channel = None
+        if active_tab.currentItem() is not None and active_tab.currentItem().checkState():
+            target_channel = active_tab.currentItem().text()
 
-        channel_data = self._get_point_channel_data(current.text(), new_channel)
+        if target_channel == '' or target_channel is None:
+            self.update_figures(figure_updates)
+            self.current_point = point_path
+            return
 
-        plot_name = self._gen_preview_fig_name(current.text(), new_channel)
-
-        self.preview_id = self._add_update_figure(self.preview_id, current.text(),
-                                                  ImagePlot(channel_data), plot_name,
-                                                  self.loadingReuseButton)
-
-        # refill rparamsTable
-        while self.rparamsTable.rowCount() > 0:
-            self.rparamsTable.removeRow(self.rparamsTable.rowCount()-1)
-        for br_params in (self.points[current.text()].get_param('BR_params') or []):
-            new_row = self.rparamsTable.rowCount()
-            self.rparamsTable.insertRow(new_row)
-            self.rparamsTable.setItem(new_row,
-                                      0,
-                                      QtWidgets.QTableWidgetItem(f'{br_params[0]}'))
-            self.rparamsTable.setItem(new_row,
-                                      1,
-                                      QtWidgets.QTableWidgetItem(f'{br_params[1]}'))
-            self.rparamsTable.setItem(new_row,
-                                      2,
-                                      QtWidgets.QTableWidgetItem(f'{br_params[2]}'))
-
-        self.main_viewer.refresh_plots()
-
-    def on_channel_change(self, current_text: str) -> None:
-        """ Callback for background channel reselection
-
-        Refreshes plots w/ new background channel
-
-        Args:
-            current_text: current name of channel selected
-        """
-
-        if current_text and self.loadingPointsList.currentItem() is not None:
-
-            # get channel_data
-            current_point = self.loadingPointsList.currentItem().text()
-            channel_data = self._get_point_channel_data(current_point, current_text)
-            preview_name = self._gen_preview_fig_name(current_point, current_text)
-
-            # update preview
-            self.preview_id = self._add_update_figure(self.preview_id, current_point,
-                                                      ImagePlot(channel_data), preview_name,
-                                                      self.loadingReuseButton)
-
-            # update background mask figure
-            if self.points[current_point].get_param('BR_params'):
-                br_params = self.points[current_point].get_param('BR_params')[0]
-                mask_name = self._gen_mask_fig_name(current_point, current_text, br_params)
-                channel_mask = self._generate_mask(channel_data, *br_params)
-
-                self.br_reuse_id = self._add_update_figure(
-                    self.br_reuse_id, current_point,
-                    ImagePlot(channel_mask, fixed_contrast=True), mask_name,
-                    self.rparamsReuseButton
-                )
-
-            # refresh plots
-            self.main_viewer.refresh_plots()
-
-    def on_remove_point(self) -> None:
-        """ Callback for Remove Point button
-
-        Removes point from list and clears its associated figures
-        """
-
-        if self.loadingPointsList.currentItem():
-            # get current point key value
-            current_point = self.loadingPointsList.currentItem().text()
-
-            # remove all of current point's figure ids
-            if self.main_viewer.figures.remove_figures(
-                self.points[current_point].figure_ids
-            ):
-                print('Figures successfully removed')
+        # conditionally update source/target parameters
+        if source_channel == self.current_source and target_channel == self.current_target:
+            if self.set_all_targets:
+                params = self.get_params()
+                for target in self.settings[source_channel].keys():
+                    self.settings[source_channel][target] = params
             else:
-                # this indicates a problem w/ either figure manager
-                # or untracked figure-point ownerships/associations
-                print('Some figures could not be located for removal')
-
-            # clear figure id's if they're associated with the removed point
-            if self.preview_id in self.points[current_point].figure_ids:
-                self.preview_id = None
-            if self.br_reuse_id in self.points[current_point].figure_ids:
-                self.br_reuse_id = None
-
-            # clear rparamsTable entries:
-            while self.rparamsTable.rowCount() > 0:
-                self.rparamsTable.removeRow(self.rparamsTable.rowCount()-1)
-
-            # clear eparamsTable entries
-            while self.eparamsTable.rowCount() > 0:
-                self.eparamsTable.removeRow(self.eparamsTable.rowCount() - 1)
-
-            # directly remove the point from the dictionary
-            del self.points[current_point]
-
-            # remove point from point list
-            self.loadingPointsList.takeItem(
-                self.loadingPointsList.currentRow()
-            )
-
-            self.eparamsPointSelect.removeItem(
-                self.eparamsPointSelect.findText(current_point)
-            )
-
+                self.settings[source_channel][target_channel] = self.get_params()
         else:
-            print('No points are currently loaded...')
+            self.set_params(self.settings[source_channel][target_channel])
 
-    def _generate_mask(self, background_image: Any, radius: float, threshold: float,
-                       backcap: int) -> Any:
-        """ Mask generation algorithm
+        # generate mask
+        mask = self._generate_mask(self.source_data)
+        figure_updates['background_mask'] = (
+            f"{point_path.split('/')[-1]} channel {source_channel} mask {self.get_params()}",
+            ImagePlot(mask, fixed_contrast=True)
+        )
 
-        Generates binaraized mask used for background removal
+        # get/refresh target channel plot
+        if (target_channel != self.current_target
+            or point_path != self.current_point
+            or self.target_data is None):
+
+            self.target_data = self.main_viewer.CohortTreeWidget.get_item(
+                f'{point_path}/{target_channel}'
+            ).get_image_data()
+        unprocessed_target, processed_target = self._evaluate_target_views(mask, self.target_data)        
+
+        figure_updates['target_preview'] = (
+            f"{point_path.split('/')[-1]} - {target_channel} Before",
+            ImagePlot(unprocessed_target, fixed_contrast=True)
+        )
+        figure_updates['target_no_background'] = (
+            f"{point_path.split('/')[-1]} - {target_channel} After {self.get_params()}",
+            ImagePlot(processed_target, fixed_contrast=True)
+        )
+
+        self.update_figures(figure_updates)
+
+        self.current_point = point_path
+
+    def _generate_mask(self, background_image: Any) -> Any:
+        """Generates binaraized mask used for background removal
 
         Args:
             background_image (ndarray): background channel to create mask with (const)
-            radius (float): radius of gaussian blur
-            theshold (float): binarization threshold post-bluring
-            backcap (int): maximum pixel value pre-bluring
 
         Returns:
             background_mask (ndarray): generated binarized mask
         """
+        params = self.get_params()
 
-        # generate new array
         background_mask = np.zeros_like(background_image)
-
-        # apply cap
-        background_mask[background_image > backcap] = backcap
-
-        # apply blur
-        background_mask = gaussian_filter(background_mask, radius)
-
-        # mat2gray
+        background_mask[background_image > params['cap']] = params['cap']
+        background_mask = gaussian_filter(background_mask, params['blur'])
         background_mask = np.interp(background_mask,
                                     (background_mask.min(),
                                      background_mask.max()),
                                     (0, 1))
-
-        # thresh
-        background_mask = np.where(background_mask > threshold, 1, 0)
-
+        background_mask = np.where(background_mask > params['thresh'], 1, 0)
         return background_mask
 
-    def test_br_params(self) -> None:
-        """ Callback for background removal 'test' button
-
-        Generates background mask with current parameters, plots it,
-        adds parameters to parameter table, and stores relevent data
-        within the selected 'Point' object.
-        """
-
-        if self.loadingPointsList.currentItem() is None:
-            return
-
-        # get point information
-        current_point = self.loadingPointsList.currentItem().text()
-        current_channel = self.loadingChannelSelect.currentText()
-        background_image = self._get_point_channel_data(current_point, current_channel)
-
-        # get alg params
-        radius = self.rparamsGausRadiusBox.value()
-        threshold = self.rparamsThreshBox.value()
-        backcap = self.rparamsBackCapBox.value()
-
-        # generate mask
-        background_mask = self._generate_mask(
-            background_image,
-            radius,
-            threshold,
-            backcap
-        )
-
-        # generate plot object for mask and create figure
-        mask_name = \
-            self._gen_mask_fig_name(current_point, current_channel, [radius, threshold, backcap])
-
-        im_plot = ImagePlot(background_mask, fixed_contrast=True)
-        self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
-                                                   mask_name, self.rparamsReuseButton)
-
-        # get next row and add data to points for storage
-        new_row = self.rparamsTable.rowCount()
-        params = self.points[current_point].get_param('BR_params')
-        params = list() if not params else params
-        params.append([radius, threshold, backcap])
-        self.points[current_point].set_param('BR_params', params)
-
-        # add data to rparamsTable
-        self.rparamsTable.insertRow(new_row)
-        self.rparamsTable.setItem(new_row,
-                                  0,
-                                  QtWidgets.QTableWidgetItem(f'{radius}'))
-        self.rparamsTable.setItem(new_row,
-                                  1,
-                                  QtWidgets.QTableWidgetItem(f'{threshold}'))
-        self.rparamsTable.setItem(new_row,
-                                  2,
-                                  QtWidgets.QTableWidgetItem(f'{backcap}'))
-
-        self.main_viewer.refresh_plots()
-
-    def br_cell_click(self, row: int, column: int) -> None:
-        """Callback for item selection in background removal parameters.
-
-        Ensures entire row is selected (mostly for visual appeal) and generates mask for selected
-        parameters.
-
-        TODO: Cache previous results ?
+    def _evaluate_target(self, mask: Any, target_data: Any, remove_value: Union[int, None] = None) -> Any:
+        """ Subtracts remove value from target image at positive mask values
 
         Args:
-            row (int):
-                row of cell clicked
-            columns (int):
-                column of cell clicked
-        """
-
-        # full row highlighting
-        self.rparamsTable.setRangeSelected(
-            QtWidgets.QTableWidgetSelectionRange(row, 0, row, 2),
-            True
-        )
-
-        # get attributes
-        current_point = self.loadingPointsList.currentItem().text()
-        current_channel = self.loadingChannelSelect.currentText()
-        background_image = self._get_point_channel_data(current_point, current_channel)
-
-        params = self.points[current_point].get_param('BR_params')[row]
-
-        # generate mask
-        background_mask = self._generate_mask(
-            background_image,
-            *params
-        )
-
-        # generate plot object for mask and create figure
-        mask_name = \
-            self._gen_mask_fig_name(current_point, current_channel, params)
-
-        im_plot = ImagePlot(background_mask, fixed_contrast=True)
-
-        self.br_reuse_id = self._add_update_figure(self.br_reuse_id, current_point, im_plot,
-                                                   mask_name, self.rparamsReuseButton)
-
-        self.main_viewer.refresh_plots()
-
-    def br_cell_change(self, new_row: int, new_col: int, old_row: int, old_col: int) -> None:
-        """Callback for arrow key selection support in background reduction params table
-
-        Basic wrapper for `br_cell_click`
-
-        Args:
-            new_row (int): Row of new current cell selected.
-            new_col (int): Column of new current cell selected.
-            old_row (int): Row of old current cell selected. Unused.
-            old_col (int): Column of new current cell selected. Unused.
-        """
-
-        # adjust for mismatched cell_change call on param deletion
-        current_point = self.loadingPointsList.currentItem().text()
-        num_br_params = len(self.points[current_point].get_param('BR_params') or [])
-
-        if new_row >= 0:
-            self.br_cell_click(
-                new_row - int(self.rparamsTable.rowCount() != num_br_params),
-                new_col
-            )
-
-    def remove_br_params(self) -> None:
-        """Callback for background reduction parameter row deletion
-        """
-
-        if self.rparamsTable.currentRow() >= 0:
-
-            # get attributes
-            current_point = self.loadingPointsList.currentItem().text()
-
-            # delete data from points
-            br_params = self.points[current_point].get_param('BR_params')
-            del br_params[self.rparamsTable.currentRow()]
-
-            # remove row from column
-            self.rparamsTable.removeRow(self.rparamsTable.currentRow())
-
-    def reload_br_params(self) -> None:
-        """Callback for filling param boxes with row of background reduction parameters
-        """
-
-        if self.rparamsTable.currentRow() >= 0:
-            current_row = self.rparamsTable.currentRow()
-
-            self.rparamsGausRadiusBox.setValue(
-                float(self.rparamsTable.item(current_row, 0).text())
-            )
-            self.rparamsThreshBox.setValue(
-                float(self.rparamsTable.item(current_row, 1).text())
-            )
-            self.rparamsBackCapBox.setValue(
-                float(self.rparamsTable.item(current_row, 2).text())
-            )
-
-    def on_eparams_point_change(self, current_text: str) -> None:
-        """Callback function for evaluation point reselection
-
-        Args:
-            current_text (str):
-                key for to points dictionary
-        """
-
-        if not current_text:
-            return
-
-        # refresh eparams channels
-        combo_channel = None
-        if self.eparamsChannelSelect.count() > 0:
-            combo_channel = self.eparamsChannelSelect.currentText()
-            self.eparamsChannelSelect.clear()
-        self.eparamsChannelSelect.addItems(self.points[current_text].get_channel_names())
-        if combo_channel is not None and combo_channel:
-            self.eparamsChannelSelect.setCurrentText(combo_channel)
-
-        # refresh eparams table
-        while self.eparamsTable.rowCount() > 0:
-            self.eparamsTable.removeRow(self.eparamsTable.rowCount()-1)
-        for ev_params in (self.points[current_text].get_param('EV_params') or []):
-            new_row = self.eparamsTable.rowCount()
-            self.eparamsTable.insertRow(new_row)
-            self.eparamsTable.setItem(new_row,
-                                      0,
-                                      QtWidgets.QTableWidgetItem(f'{ev_params[0]}'))
-            self.eparamsTable.setItem(new_row,
-                                      1,
-                                      QtWidgets.QTableWidgetItem(f'{ev_params[1]}'))
-
-    def _evaluate_channel(self, bg_channel: Any, eval_channel: Any, radius: float,
-                          threshold: float, backcap: int, remove_value: int) -> Any:
-        """Generate mask and subtract from evaluation channel where the mask is positive
-
-        Args:
-            bg_channel (numpy.ndarray):
-                Background channel data
-            eval_channel (numpy.ndarray):
-                Evaluation channel data
-            radius (float):
-                Radius of gaussian blur used in mask generation
-            threshold (float):
-                Threshold used in mask generation
-            backcap (int):
-                Background cap used in mask generation
+            mask (np.array):
+                boolean background mask
+            target_data (np.array):
+                target channel data
             remove_value (int):
-                Amount subtracted from evaluation channel
+                intensity value to deduct from target
 
         Returns:
-            numpy.ndarray:
-                Evaluation channel with pixels dimmed/removed in masked region
+            np.array:
+                processed data
         """
+        if remove_value is None:
+            remove_value = self.get_params()['remove']
 
-        bg_mask = self._generate_mask(bg_channel, radius, threshold, backcap)
-
-        return self._evaluate_channel_with_mask(bg_mask, eval_channel, remove_value)
-
-    def _evaluate_channel_with_mask(self, bg_mask: Any, eval_channel: Any,
-                                    remove_value: int) -> Any:
-        """Subtract mask from evaluation channel where mask is positive
-
-        Args:
-            bg_mask (numpy.ndarray):
-                Binarized background channel mask
-            eval_channel (numpy.ndarray):
-                Evaluation channel data
-            remove_value (int):
-                Amount subtracted from evaluation channel
-
-        Returns:
-            numpy.ndarray:
-                Evaluation channel with pixels dimmed/removed in masked region
-        """
-
-        processed_channel = np.copy(eval_channel).astype('int')
-        processed_channel[bg_mask.astype('bool')] -= int(remove_value)
+        processed_channel = np.copy(target_data).astype('int')
+        processed_channel[mask.astype('bool')] -= remove_value
         processed_channel[processed_channel < 0] = 0
 
         return processed_channel
 
-    def on_eval_click(self) -> None:
-        """Callback function for evaluation button
+    def _evaluate_target_views(self, mask: Any, target_data: Any) -> Tuple[Any]:
+        """Generates plot views for before/after targets
+
+        Args:
+            mask (np.array):
+                boolean background mask
+            target_data (np.array):
+                target channel data
+
+        Returns:
+            (np.array, np.array):
+                - unprocessed channel view (before)
+                - processed channel view (after)
+        """
+        params = self.get_params()
+
+        unprocessed_channel = np.copy(target_data).astype('int')
+        unprocessed_channel[unprocessed_channel > params['evalcap']] = params['evalcap']
+
+        processed_channel = self._evaluate_target(mask, target_data, params['remove'])        
+        processed_channel[processed_channel > params['evalcap']] = params['evalcap']
+
+        return unprocessed_channel, processed_channel
+
+    def toggle_settings_mode(self, mode: bool) -> None:
+        """ toggles the 'set all targets' option
+
+        Args:
+            mode (bool):
+                value for 'set all targets' option
+
+        """
+        self.set_all_targets = mode        
+
+    def save_settings(self) -> None:
+        """ write background removal settings out to json
         """
 
-        if not self.eparamsPointSelect.currentText():
-            return
+        settings_dir = self.main_viewer.CohortTreeWidget.topLevelItem(0).path
 
-        eval_point = self.eparamsPointSelect.currentText()
-        eval_channel = self.eparamsChannelSelect.currentText()
-        bg_channel = self.loadingChannelSelect.currentText()
+        with open(os.path.join(settings_dir, 'background_settings.json'), 'w') as fp:
+            json.dump(self.settings, fp, indent=4)
 
-        # get relevant parameters
-        radius = self.rparamsGausRadiusBox.value()
-        threshold = self.rparamsThreshBox.value()
-        backcap = self.rparamsBackCapBox.value()
-        remove_value = self.eparamsRemoveBox.value()
+    def load_settings(self) -> None:
+        """ load settings from json file
+        """
+        self.prevent_plotting = True
 
-        before_name, after_name = \
-            self._gen_eval_fig_names(eval_point, eval_channel,
-                                     [radius, threshold, backcap, remove_value])
+        settings_path = str(QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Load Settings',
+            self.main_viewer.CohortTreeWidget.topLevelItem(0).path,
+            'JSON files(*.json)'
+        )[0])
 
-        eval_cap = self.eparamsEvalCapBox.value()
+        with open(os.path.join(settings_path), 'r') as fp:
+            new_settings: Dict[str, Dict[str, Dict[str, Any]]] = json.load(fp)
 
-        channel_data = self.points[eval_point].get_channel_data([eval_channel, bg_channel])
+        # TODO: clean settings
+        self.settings = new_settings
 
-        unprocessed_channel = np.copy(channel_data[eval_channel].astype('int'))
-        unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
+        # create tabs, check targets as needed
+        sources = [self.tabWidget.tabText(i) for i in range(self.tabWidget.count())]
+        for source, targets in new_settings.items():
+            if source in self.channels:
+                tab_index = None
+                if source not in sources:
+                    # add source
+                    tab_index = self.tabWidget.addTab(self.generate_new_target_list(source), source)
+                else:
+                    tab_index = sources.index(source)
+                source_tab: QtWidgets.QListWidget = self.tabWidget.widget(tab_index)
+                for target, params in targets.items():
+                    if target in self.channels:
 
-        # get preview image for before and plot
-        self._add_update_figure(
-            None, eval_point, ImagePlot(unprocessed_channel, fixed_contrast=True), before_name
-        )
+                        target_index = [
+                            source_tab.item(i).text()
+                            for i in range(source_tab.count())].index(target)
 
-        processed_channel = self._evaluate_channel(
-            channel_data[bg_channel],
-            channel_data[eval_channel],
-            radius,
-            threshold,
-            backcap,
-            remove_value
-        )
+                        source_tab.item(target_index).setCheckState(True)
 
-        # show after image as different plot
-        processed_channel[processed_channel > eval_cap] = eval_cap
-        self._add_update_figure(
-            None, eval_point, ImagePlot(processed_channel, fixed_contrast=True), after_name
-        )
+        self.prevent_plotting = False
 
-        # get next row and add data to points for storage
-        new_row = self.eparamsTable.rowCount()
-        params = self.points[eval_point].get_param('EV_params')
-        params = list() if not params else params
-        params.append([remove_value, eval_cap])
-        self.points[eval_point].set_param('EV_params', params)
-
-        # add data to rparamsTable
-        self.eparamsTable.insertRow(new_row)
-        self.eparamsTable.setItem(new_row,
-                                  0,
-                                  QtWidgets.QTableWidgetItem(f'{remove_value}'))
-        self.eparamsTable.setItem(new_row,
-                                  1,
-                                  QtWidgets.QTableWidgetItem(f'{eval_cap}'))
-
-    def on_eval_all_click(self) -> None:
-        """Callback function for evaluate all button.  Runs evaluation over all loaded points
+    def remove_background(self) -> None:
+        """ run full background removal on all selected points and save output
         """
 
-        # get fixed chanels
-        eval_channel = self.eparamsChannelSelect.currentText()
-        bg_channel = self.loadingChannelSelect.currentText()
+        self.prevent_plotting = True
 
-        # get relevant parameters
-        radius = self.rparamsGausRadiusBox.value()
-        threshold = self.rparamsThreshBox.value()
-        backcap = self.rparamsBackCapBox.value()
-        remove_value = self.eparamsRemoveBox.value()
+        # copy directory
+        src_dir = self.main_viewer.CohortTreeWidget.topLevelItem(0).path
+        parent_dir = os.path.dirname(src_dir[:-1])
+        tmp_dir = os.path.join(parent_dir, 'bg_removed_temp')
+        final_dir = os.path.join(parent_dir, 'background_removed')
 
-        eval_cap = self.eparamsEvalCapBox.value()
+        shutil.copytree(src_dir, tmp_dir)
 
-        for index in range(self.eparamsPointSelect.count()):
-            eval_point = self.eparamsPointSelect.itemText(index)
+        # loop over all selected points
+        points = [self.pointPlotSelect.itemText(i) for i in range(self.pointPlotSelect.count())]
+        for point in points:
+            # loop over settings
+            for source, targets in self.settings.items():
+                source_item = self.main_viewer.CohortTreeWidget.get_item(f'{point}/{source}')
+                if source_item is None:
+                    continue
+                source_data = source_item.get_image_data()
+                for target, params in targets.items():
+                    target_item = self.main_viewer.CohortTreeWidget.get_item(f'{point}/{target}')
+                    if target_item is None:
+                        continue
+                    target_data = target_item.get_image_data()
+                    self.set_params(params)
+                    mask = self._generate_mask(source_data)
+                    target_data_cleaned = self._evaluate_target(mask, target_data)
 
-            before_name, after_name = \
-                self._gen_eval_fig_names(eval_point, eval_channel,
-                                         [radius, threshold, backcap, remove_value])
+                    target_item.write_image_data(target_data_cleaned)
 
-            channel_data = self.points[eval_point].get_channel_data([eval_channel, bg_channel])
+        # rename directories
+        os.rename(src_dir, final_dir)
+        os.rename(tmp_dir, src_dir)
 
-            unprocessed_channel = np.copy(channel_data[eval_channel].astype('int'))
-            unprocessed_channel[unprocessed_channel > eval_cap] = eval_cap
-
-            # get preview image for before and plot
-            self._add_update_figure(
-                None, eval_point, ImagePlot(unprocessed_channel, fixed_contrast=True), before_name
-                )
-
-            processed_channel = self._evaluate_channel(
-                channel_data[bg_channel],
-                channel_data[eval_channel],
-                radius,
-                threshold,
-                backcap,
-                remove_value
-            )
-
-            # show after image as different plot
-            processed_channel[processed_channel > eval_cap] = eval_cap
-            self._add_update_figure(
-                None, eval_point, ImagePlot(processed_channel, fixed_contrast=True), after_name
-            )
-
-            new_row = self.eparamsTable.rowCount()
-            params = self.points[eval_point].get_param('EV_params')
-            params = list() if not params else params
-            params.append([remove_value, eval_cap])
-            self.points[eval_point].set_param('EV_params', params)
-
-            # add data to rparamsTable
-            self.eparamsTable.insertRow(new_row)
-            self.eparamsTable.setItem(new_row,
-                                      0,
-                                      QtWidgets.QTableWidgetItem(f'{remove_value}'))
-            self.eparamsTable.setItem(new_row,
-                                      1,
-                                      QtWidgets.QTableWidgetItem(f'{eval_cap}'))
-
-    def remove_ev_params(self) -> None:
-        """Callback for delete eval parameter button
-        """
-
-        if self.eparamsTable.currentRow() >= 0:
-            current_row = self.eparamsTable.currentRow()
-            current_point = self.eparamsPointSelect.currentText()
-
-            # delete data from points
-            ev_params = self.points[current_point].get_param('EV_params')
-            del ev_params[current_row]
-
-            # remove row from column
-            self.eparamsTable.removeRow(current_row)
-
-    def reload_ev_params(self) -> None:
-        """Callback for reloading eval params into the boxes
-        """
-
-        if self.eparamsTable.currentRow() >= 0:
-            current_row = self.eparamsTable.currentRow()
-
-            self.eparamsRemoveBox.setValue(
-                float(self.eparamsTable.item(current_row, 0).text())
-            )
-            self.eparamsEvalCapBox.setValue(
-                float(self.eparamsTable.item(current_row, 1).text())
-            )
-
-    def on_load_params(self) -> None:
-        """Load parameters used for full background subtraction run
-        """
-
-        self.loaded_params = {
-            'radius': self.rparamsGausRadiusBox.value(),
-            'threshold': self.rparamsThreshBox.value(),
-            'backcap': self.rparamsBackCapBox.value(),
-            'remove': self.eparamsRemoveBox.value(),
-            'evalcap': self.eparamsEvalCapBox.value(),
-        }
-
-        self.runGausRadiusVal.setText(self.rparamsGausRadiusBox.text())
-        self.runThreshVal.setText(self.rparamsThreshBox.text())
-        self.runBackCapVal.setText(self.rparamsBackCapBox.text())
-        self.runRemoveVal.setText(self.eparamsRemoveBox.text())
-        self.runEvalCapVal.setText(self.eparamsEvalCapBox.text())
-
-        self.runBackgroundButton.setEnabled(True)
-
-    def on_run_background(self) -> None:
-        """Run full background subtraction on all loaded points/channels
-        """
-
-        logfile_txt = ""
-
-        bg_channel_name = self.loadingChannelSelect.currentText()
-        logfile_txt += f'background channel: {bg_channel_name}\n'
-
-        for param_name, param_value in zip(self.loaded_params.keys(), self.loaded_params.values()):
-            logfile_txt += f'{param_name}: {param_value}\n'
-
-        logfile_txt += '\n'
-
-        timestamp = datetime.now().strftime("%b_%d_%y__%H_%M_%S")
-
-        # just to bound extracted_folder
-        extracted_folder = os.path.join(
-            list(self.points.values())[0].get_top_dir(),
-            f'no_background_{timestamp}'
-        )
-
-        # loop over all loaded points
-        for point in self.points.values():
-            top_dir = point.get_top_dir()
-            extracted_folder = os.path.join(top_dir, f'no_background_{timestamp}')
-            tif_folder = os.path.join(extracted_folder, point.name, 'TIFs')
-            pathlib.Path(tif_folder).mkdir(parents=True, exist_ok=True)
-
-            logfile_txt += f'{point.get_point_dir()}\n'
-
-            bg_channel_data = self._get_point_channel_data(point.name, bg_channel_name)
-
-            mask = self._generate_mask(bg_channel_data, self.loaded_params['radius'],
-                                       self.loaded_params['threshold'],
-                                       self.loaded_params['backcap'])
-
-            for ev_channel_name in point.get_channel_names():
-                ev_channel_data = self._get_point_channel_data(point.name, ev_channel_name)
-
-                processed_channel_data = self._evaluate_channel_with_mask(
-                    mask,
-                    ev_channel_data,
-                    self.loaded_params['remove']
-                )
-
-                Image.fromarray(processed_channel_data.astype(np.uint8)).save(
-                    os.path.join(tif_folder, f'{ev_channel_name}.tif')
-                )
-
-        # write log file out
-        with open(os.path.join(extracted_folder, f'{timestamp}.log'), 'w') as f:
-            f.write(logfile_txt)
-
+        self.prevent_plotting = False
 
 # function for amp plugin building
 def build_as_plugin(main_viewer: MainViewer, plugin_path: str) -> BackgroundRemoval:
