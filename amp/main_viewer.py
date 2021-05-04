@@ -14,7 +14,7 @@ from amp.contrast_window import ContrastWindow
 from amp.mplwidget import ImagePlot
 from amp.figure_manager import FigureManager
 
-from PIL import Image
+import  skimage.io as io
 from numpy import asarray
 
 import os
@@ -179,7 +179,7 @@ class MainViewer(QtWidgets.QMainWindow):
         )
 
     def load_cohort(self) -> None:
-        """ Callback for loading files into main viewer
+        """ Callback for loading points into amp
         """
         flags = QtWidgets.QFileDialog.ShowDirsOnly
         folderpath = QtWidgets.QFileDialog.getExistingDirectory(self,
@@ -208,9 +208,14 @@ class MainViewer(QtWidgets.QMainWindow):
         # discard non-checkable items
         if not (item.flags() & QtCore.Qt.ItemIsUserCheckable):
             return
+
         # set default name
-        name = os.path.basename(item.path).split('.')[0]
-        name = f'{os.path.split(item.path)[0].split("/")[-1]}_{name}'
+        if '|' in item.path:
+            name = os.path.basename(item.path).split('|')[1]
+        else:
+            name = os.path.basename(item.path).split('.')[0]
+            name = f'{os.path.split(item.path)[0].split("/")[-1]}_{name}'
+
         row = self.PlotListWidget.get_item_row_by_path(item.path)
         # add image if not already in plot list
         if (
@@ -222,7 +227,7 @@ class MainViewer(QtWidgets.QMainWindow):
                     item.setCheckState(0, QtCore.Qt.Unchecked)
 
             self.PlotListWidget.add_item(
-                name, ImagePlot(asarray(Image.open(item.path))), item.path, delete_callback
+                name, ImagePlot(item.get_image_data()), item.path, delete_callback
             )
         # remove image otherwise
         elif (
