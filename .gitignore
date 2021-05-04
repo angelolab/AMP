@@ -12,8 +12,8 @@ dist/
 
 *.egg-info
 
-to_dmg/
+*/.DS_Store
+
+*.zip
 
 *.dmg
-
-plugins.zip

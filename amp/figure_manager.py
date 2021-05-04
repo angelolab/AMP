@@ -1,7 +1,7 @@
 from collections import deque
 from amp.mplwidget import Plot
 from amp.plotlistwidget import PlotListWidget
-from typing import List, Union, Dict, Callable
+from typing import List, Union, Dict, Callable, Any
 
 # prefilling dictionary prevents slow rehashing
 MAX_FIGS = 64
@@ -100,6 +100,21 @@ class FigureManager(object):
         self.plot_list.item(row).plot = new_plot
         if name is not None:
             self.plot_list.item(row).setText(name)
+
+
+    # TODO: add figure name updates
+    def update_figure_data(self, index: int, new_plot_data: Dict[str, Any]) -> None:
+        """ Updates plot data within figure (doesn't create/need new plot object)
+
+        Args:
+            index (int):
+                Figure index to update
+            new_plot_data (Dict[str, Any]):
+                Updated relevant plotting data
+        """
+        for key, value in new_plot_data.items():
+            self.figure_map.get(index).plot_data[key] = value
+        self.plot_list.refresh_current_plot()
 
     # TODO: Failing to remove figure or recomputing queue should explicitly throw error or warning
     def remove_figure(self, index: int) -> bool:
