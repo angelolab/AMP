@@ -6,592 +6,474 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>435</width>
-    <height>863</height>
+    <width>521</width>
+    <height>1000</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_7">
+   <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
-     <widget class="QGroupBox" name="loadingGroup">
-      <property name="title">
-       <string>Load Points and Select Background Channel</string>
+     <widget class="QLabel" name="label_7">
+      <property name="text">
+       <string>Source Channel Select</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+     </widget>
+    </item>
+    <item>
+     <widget class="QSplitter" name="splitter_10">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QComboBox" name="sourceSelect"/>
+      <widget class="QPushButton" name="addSourceButton">
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Add Source</string>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_6">
+      <property name="text">
+       <string>Example Plot Point</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QComboBox" name="pointPlotSelect"/>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="pointTab">
+       <attribute name="title">
+        <string>Points</string>
+       </attribute>
+       <widget class="QTreeWidget" name="pointTree">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>501</width>
+          <height>351</height>
+         </rect>
+        </property>
+        <column>
+         <property name="text">
+          <string notr="true">1</string>
+         </property>
+        </column>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>255</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
+      <property name="title">
+       <string>Mask Settings</string>
+      </property>
+      <widget class="QSplitter" name="splitter_4">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>30</y>
+         <width>461</width>
+         <height>211</height>
+        </rect>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="handleWidth">
+        <number>25</number>
+       </property>
+       <widget class="QWidget" name="layoutWidget_0">
+        <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QPushButton" name="loadingAddButton">
+          <widget class="QLabel" name="label">
            <property name="text">
-            <string>Add Point(s)</string>
+            <string>Blur Radius</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="loadingRemoveButton">
-           <property name="text">
-            <string>Remove Point(s)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
+          <widget class="QSplitter" name="splitter">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>28</width>
-             <height>20</height>
-            </size>
+           <property name="handleWidth">
+            <number>15</number>
            </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QComboBox" name="loadingChannelSelect"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QListWidget" name="loadingPointsList"/>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="loadingReuseButton">
-         <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
-         </property>
-         <property name="text">
-          <string>Reuse Figure(s)</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="rparamsGroup">
-      <property name="title">
-       <string>Background Removal Parameters</string>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <layout class="QGridLayout" name="gridLayout">
-           <item row="1" column="2">
-            <widget class="QDoubleSpinBox" name="rparamsThreshBox">
-             <property name="frame">
-              <bool>true</bool>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
-             </property>
-             <property name="decimals">
-              <number>2</number>
-             </property>
-             <property name="value">
-              <double>0.200000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Gaussian radius :</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QDoubleSpinBox" name="rparamsBackCapBox">
-             <property name="frame">
-              <bool>true</bool>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
-             </property>
-             <property name="decimals">
-              <number>0</number>
-             </property>
-             <property name="value">
-              <double>10.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0" colspan="2">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>Background Cap :</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Threshold :</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QDoubleSpinBox" name="rparamsGausRadiusBox">
-             <property name="frame">
-              <bool>true</bool>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
-             </property>
-             <property name="decimals">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <double>1.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_8">
-           <item>
-            <widget class="QPushButton" name="rparamsTestButton">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Test</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="rparamsReuseButton">
-             <property name="text">
-              <string>Reuse Figure(s)</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
+           <widget class="QSlider" name="blurSlider">
+            <property name="value">
+             <number>2</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+           <widget class="QDoubleSpinBox" name="blurDoubleSpinBox">
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="decimals">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <double>99.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>2.000000000000000</double>
+            </property>
+           </widget>
+          </widget>
          </item>
         </layout>
-       </item>
-       <item>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QTableWidget" name="rparamsTable">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Threshold</string>
            </property>
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
-           </property>
-           <property name="columnCount">
-            <number>3</number>
-           </property>
-           <attribute name="horizontalHeaderVisible">
-            <bool>true</bool>
-           </attribute>
-           <attribute name="horizontalHeaderDefaultSectionSize">
-            <number>55</number>
-           </attribute>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <column>
-            <property name="text">
-             <string>Gauss rad</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Thresh</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>BackCap</string>
-            </property>
-           </column>
           </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <widget class="QPushButton" name="rparamsDeleteButton">
-             <property name="text">
-              <string>Delete</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="rparamsReloadButton">
-             <property name="text">
-              <string>Reload</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QSplitter" name="splitter_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="handleWidth">
+            <number>15</number>
+           </property>
+           <widget class="QSlider" name="threshSlider">
+            <property name="maximum">
+             <number>99</number>
+            </property>
+            <property name="value">
+             <number>20</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+           <widget class="QDoubleSpinBox" name="threshDoubleSpinBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="maximum">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.050000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.200000000000000</double>
+            </property>
+           </widget>
+          </widget>
          </item>
         </layout>
-       </item>
-      </layout>
+       </widget>
+       <widget class="QWidget" name="layoutWidget_2">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Intensity Cap</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSplitter" name="splitter_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="handleWidth">
+            <number>15</number>
+           </property>
+           <widget class="QSlider" name="capSlider">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+           <widget class="QSpinBox" name="capSpinBox">
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="eparamsGroup">
-      <property name="title">
-       <string>Evaluation Parameters</string>
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="1" column="2">
-          <widget class="QPushButton" name="eparamsDeleteButton">
-           <property name="text">
-            <string>Delete</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="QPushButton" name="eparamsReloadButton">
-           <property name="text">
-            <string>Reload</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="eparamsChannelSelect"/>
-         </item>
-         <item row="0" column="0">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>175</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
+        <underline>false</underline>
+       </font>
+      </property>
+      <property name="cursor">
+       <cursorShape>ArrowCursor</cursorShape>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="title">
+       <string>Removal Settings</string>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+      <property name="checkable">
+       <bool>false</bool>
+      </property>
+      <widget class="QSplitter" name="splitter_5">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>30</y>
+         <width>461</width>
+         <height>131</height>
+        </rect>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="handleWidth">
+        <number>25</number>
+       </property>
+       <widget class="QWidget" name="layoutWidget_3">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Point</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <string>Remove Amount</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
+         <item>
+          <widget class="QSplitter" name="splitter_6">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="handleWidth">
+            <number>15</number>
+           </property>
+           <widget class="QSlider" name="removeSlider">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>2</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+           <widget class="QSpinBox" name="removeSpinBox">
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>2</number>
+            </property>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="layoutWidget_4">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>Channel</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <string>Intensity Cap (Display Only)</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="1" colspan="3">
-          <widget class="QComboBox" name="eparamsPointSelect"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_4">
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="QLabel" name="label_6">
-               <property name="text">
-                <string>Remove values</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QDoubleSpinBox" name="eparamsRemoveBox">
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
-               </property>
-               <property name="decimals">
-                <number>0</number>
-               </property>
-               <property name="value">
-                <double>2.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="QLabel" name="label_7">
-               <property name="text">
-                <string>Evaluation Cap</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QDoubleSpinBox" name="eparamsEvalCapBox">
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
-               </property>
-               <property name="decimals">
-                <number>0</number>
-               </property>
-               <property name="value">
-                <double>10.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QPushButton" name="eparamsEvalButton">
-             <property name="text">
-              <string>Evaluate Point</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="eparamsEvalAllButton">
-             <property name="text">
-              <string>Evaluate All Points</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QTableWidget" name="eparamsTable">
-           <property name="columnCount">
-            <number>2</number>
+          <widget class="QSplitter" name="splitter_7">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
            </property>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <column>
-            <property name="text">
-             <string>rm val</string>
+           <property name="handleWidth">
+            <number>15</number>
+           </property>
+           <widget class="QSlider" name="evalcapSlider">
+            <property name="maximum">
+             <number>255</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>eval cap</string>
+            <property name="value">
+             <number>15</number>
             </property>
-           </column>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+           <widget class="QSpinBox" name="evalcapSpinBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
           </widget>
          </item>
         </layout>
-       </item>
-      </layout>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+    <item alignment="Qt::AlignRight">
+     <widget class="QRadioButton" name="setAllTargetsButton">
+      <property name="text">
+       <string>Apply To All Targets</string>
+      </property>
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="runGroup">
-      <property name="title">
-       <string>Background Removal</string>
+     <widget class="QSplitter" name="splitter_9">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_7">
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_6">
-         <item>
-          <widget class="QPushButton" name="runLoadButton">
-           <property name="text">
-            <string>Load Params</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="runBackgroundButton">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Remove Background</string>
-           </property>
-           <property name="checkable">
-            <bool>false</bool>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Gaussian Radius : </string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="runGausRadiusVal">
-           <property name="font">
-            <font>
-             <italic>false</italic>
-             <underline>false</underline>
-            </font>
-           </property>
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">color: rgb(13, 114, 255);</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string>Threshold :</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLabel" name="runThreshVal">
-           <property name="font">
-            <font>
-             <italic>false</italic>
-             <underline>false</underline>
-            </font>
-           </property>
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">color: rgb(13, 114, 255);</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_12">
-           <property name="text">
-            <string>Background Cap :</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="runBackCapVal">
-           <property name="font">
-            <font>
-             <italic>false</italic>
-             <underline>false</underline>
-            </font>
-           </property>
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">color: rgb(13, 114, 255);</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_14">
-           <property name="text">
-            <string>Evaluation Cap :</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="runRemoveVal">
-           <property name="font">
-            <font>
-             <italic>false</italic>
-             <underline>false</underline>
-            </font>
-           </property>
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">color: rgb(13, 114, 255);</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_9">
-           <property name="text">
-            <string>Remove Value</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QLabel" name="runEvalCapVal">
-           <property name="styleSheet">
-            <string notr="true">color: rgb(13, 114, 255);</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>125</height>
+       </size>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <widget class="QSplitter" name="splitter_8">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <widget class="QPushButton" name="loadSettingsButton">
+        <property name="text">
+         <string>Load Settings</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="saveSettingsButton">
+        <property name="text">
+         <string>Save Settings</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QPushButton" name="runRemovalButton">
+       <property name="text">
+        <string>Remove Background</string>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -601,7 +483,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>435</width>
+     <width>521</width>
      <height>22</height>
     </rect>
    </property>

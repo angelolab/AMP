@@ -68,8 +68,19 @@ class PlotListWidget(QtWidgets.QListWidget):
     def delete_item(self, row: int) -> None:
         if row is None or row < 0:
             return
+        pre_delete_callback_hash = id(self.item(row))
         if self.item(row).delete_callback is not None:
             self.item(row).delete_callback()
+
+        # mega jank imo, probably want something better
+        # for context, figure_manager can delete plot list widget items via delete_callback
+        # this fascilitates figures being 'delete-able both ways',
+        # but probs not optimally/efficiently
+        #
+        # UPDATE: it is mega jank (double figure deletes)
+        # fixed/extra-janked it with object ids lmao
+        if id(self.item(row)) != pre_delete_callback_hash:
+            return
 
         # remove breakout window
         self.item(row).canvas = None

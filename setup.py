@@ -7,9 +7,9 @@ with open("readme.md", 'r', encoding='utf-8') as fh:
 dependencies = [
     'matplotlib==3.3.2',
     'numpy>=1.19.2',
-    'pillow==8.1.0',
     'PyQt5==5.9.2',
     'scipy>=1.5.2',
+    'scikit-image==0.17.2'
 ]
 
 setuptools.setup(
