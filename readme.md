@@ -14,7 +14,7 @@ This project is under active development, so exact details of functionality are 
 
 ### Current plugins
 
-- 🟡 MAUI style background removal
+- ✔️ MAUI style background removal
 
 ### Planned plugins
 
