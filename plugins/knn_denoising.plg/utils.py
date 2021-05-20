@@ -57,7 +57,7 @@ def _gamma_mixture(x, n_dists, max_iter, init_index, tol):
             _calc_q(x, z_cond_dists_next, w_hats, a_hats, b_hats)
             - _calc_q(x, z_cond_dists, ws, alphas, betas)
         )
-        
+
         # update params and distributions
         ws, alphas, betas = (w_hats, a_hats, b_hats)
         dist_pdfs = dist_pdfs_next
