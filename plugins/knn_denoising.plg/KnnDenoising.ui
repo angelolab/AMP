@@ -280,7 +280,7 @@
        </widget>
        <widget class="QPushButton" name="optThreshButton">
         <property name="text">
-         <string>Optimize Threshold</string>
+         <string>Run KNN</string>
         </property>
        </widget>
       </widget>
@@ -292,7 +292,7 @@
        <enum>Qt::LeftToRight</enum>
       </property>
       <property name="text">
-       <string>Optimize All Thresholds</string>
+       <string>Optimize Thresholds</string>
       </property>
      </widget>
     </item>

@@ -1,7 +1,6 @@
 # start custom imports - DO NOT MANUALLY EDIT BELOW
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
 from PyQt5 import QtWidgets, QtCore, uic
-from importlib import reload
 
 from amp.main_viewer import MainViewer
 from amp.mplwidget import ImagePlot, HistPlot, Plot
@@ -49,7 +48,7 @@ def _gamma_mixture(x, n_dists, max_iter, init_index, tol):
 
     z_cond_dists = (ws[:, np.newaxis] * dist_pdfs) / total_dist
 
-    while range(max_iter):
+    for _iter in range(max_iter):
 
         sum_Ts = np.sum(z_cond_dists, axis=1)
         sum_Txs = np.dot(z_cond_dists, x)
@@ -66,7 +65,10 @@ def _gamma_mixture(x, n_dists, max_iter, init_index, tol):
         w_hats = sum_Ts / x.shape[0]
 
         # get next iter distributions
-        dist_pdfs_next = np.array([gamma.pdf(x, a_hats[i], scale = 1 / b_hats[i]) for i in range(n_dists)])
+        dist_pdfs_next = np.array([
+            gamma.pdf(x, a_hats[i], scale = 1 / b_hats[i])
+            for i in range(n_dists)
+        ])
         total_dist_next = np.dot(dist_pdfs_next.T, w_hats)
         z_cond_dists_next = (w_hats[:, np.newaxis] * dist_pdfs_next) / total_dist_next
 
@@ -101,6 +103,9 @@ def optimize_threshold(knn_dists):
 
     dist1 = w[0] * gamma.pdf(x, alpha[0], scale = 1 / beta[0])
     dist2 = w[1] * gamma.pdf(x, alpha[1], scale = 1 / beta[1])
+
+    if len(np.abs(dist1 - dist2)) == 0:
+        return _INIT_KNN_THRESH
 
     return x[np.argmin(np.abs(dist1 - dist2))]
 
@@ -174,6 +179,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 channel_item.setCheckState(QtCore.Qt.Unchecked)
 
         self.pointTree.itemChanged.connect(self.on_point_toggle)
+        self.runDenoiseButton.clicked.connect(self.denoise)
+        self.saveSettingsButton.clicked.connect(self.save_settings)
+        self.loadSettingsButton.clicked.connect(self.load_settings)
 
         # connect sliders and spin boxes
         spin_slider_pairs: List[Tuple[QtWidgets.QSpinBox, QtWidgets.QSlider]] = \
@@ -183,12 +191,14 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 (self.capSpinBox, self.capSlider),
             ]
         # assumes minimum is always 0
+        self.replot_on_spinchange = True
         for spin_box, slider in spin_slider_pairs:
             def spinbox_change(spi=spin_box, sli=slider):
                 sli.setValue(
                     round(float(sli.maximum()) * spi.value() / spi.maximum())
                 )
-                self.refocus_plots()
+                if self.replot_on_spinchange:
+                    self.refocus_plots()
 
             def slider_change(x, spi=spin_box, sli=slider) -> None:
                 spi.setValue((
@@ -205,7 +215,7 @@ class KnnDenoising(QtWidgets.QMainWindow):
         self.pointPlotSelect.currentIndexChanged.connect(lambda x: self.refocus_plots())
 
         # set callback for threshold optimizing
-        self.optThreshButton.clicked.connect(self.optimize_thresholds)
+        self.optThreshButton.clicked.connect(self.run_knns)
 
         # initialize settings and extract default alg params
         # settings are per FOV
@@ -232,13 +242,23 @@ class KnnDenoising(QtWidgets.QMainWindow):
         # Cache source and target data (prevents needless file reads)
         self.channel_data = None
         self.non_zeros = None
-        self.knn = None
+
+        # Store knn mean dist vals
+        # Technically these depend on the nonzeros for each image, but that's deterministic
+        # and quickly recomputable
+        self.knns = {}
 
         self.setWindowTitle("KNN Denoising")
 
         # define and set callbacks
         def target_list_changed_callback(item: QtWidgets.QListWidgetItem) -> None:
             if self.prevent_plotting:
+                return
+
+            if self.current_point not in self.settings.keys():
+                if item.checkState():
+                    item.setCheckState(False)
+
                 return
 
             if item.checkState():
@@ -255,7 +275,8 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 self.current_channel = item.text()
 
         # refocus plots if called
-        def target_list_clicked_callback(item: QtWidgets.QListWidgetItem, settings=self.settings) -> None:
+        def target_list_clicked_callback(item: QtWidgets.QListWidgetItem,
+                                         settings=self.settings) -> None:
             if self.prevent_plotting:
                 return
 
@@ -263,7 +284,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 # load settings if they exist
                 if self.current_point in settings.keys():
                     if item.text() in settings[self.current_point].keys():
+                        self.replot_on_spinchange = False
                         self.set_params(settings[self.current_point][item.text()])
+                        self.replot_on_spinchange = True
                 if item.text() != self.current_channel:
                     self.refocus_plots()
                     self.current_channel = item.text()
@@ -363,6 +386,8 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         # setting + unsetting focus here to force a call to 'editingFinished'
         for param_name, param_value in params.items():
+            if param_name not in self.spin_boxes.keys():
+                continue
             # prevents redundant signal chaining
             if self.spin_boxes[param_name].value() == param_value:
                 continue
@@ -412,7 +437,7 @@ class KnnDenoising(QtWidgets.QMainWindow):
         # update settings if necessary
         recalcs = {
             'thresh': True,
-            'kdist': True,
+            'kval': False,
             'cap': True,
         }
         if point_path == self.current_point and target_channel == self.current_channel:
@@ -420,10 +445,12 @@ class KnnDenoising(QtWidgets.QMainWindow):
             # loop over keys to avoid overwriting optimized threshold
             # NOTE: checking for what's actually changed here would avoid unecessary recalcs
             for key in params:
-                recalcs[key] = self.settings[point_path][target_channel][key] != params[key]
+                recalcs[key] = (self.settings[point_path][target_channel][key] != params[key])
                 self.settings[point_path][target_channel][key] = params[key]
         else:
+            self.replot_on_spinchange = False
             self.set_params(self.settings[point_path][target_channel])
+            self.replot_on_spinchange = True
 
         if recalcs['cap']:
             data_preview = self.channel_data.copy()
@@ -435,33 +462,40 @@ class KnnDenoising(QtWidgets.QMainWindow):
             )
 
         # generate mean dist knn
-        if recalcs['kdist'] or self.non_zeros is None or self.knn is None:
-            self.non_zeros, self.knn = self._generate_knn(self.channel_data)
+        if point_path in self.knns.keys() and target_channel in self.knns[point_path].keys():
+            if recalcs['kval']:
+                _, self.knns[point_path][target_channel] = \
+                    self._generate_knn(self.channel_data)
+                print('recomputing knn :(')
 
-        if recalcs['kdist'] or recalcs['thresh']:
-            figure_updates['knn_hist'] = (
-                f"{point_path.split('/')[-1]} channel {target_channel} knn hist",
-                HistPlot(
-                    self.knn,
-                    n_bins=30,
-                    thresh=self.settings[point_path][target_channel]['thresh']
+            if recalcs['kval'] or recalcs['thresh']:
+                figure_updates['knn_hist'] = (
+                    f"{point_path.split('/')[-1]} channel {target_channel} knn hist",
+                    HistPlot(
+                        self.knns[point_path][target_channel],
+                        n_bins=30,
+                        thresh=self.settings[point_path][target_channel]['thresh']
+                    )
                 )
-            )
 
-        # filter image using mean dist knn
-        if any(recalcs.values()):
-            processed_target = self._evaluate_target(self.non_zeros, self.knn, self.channel_data)
+            # filter image using mean dist knn
+            if any(recalcs.values()):
+                processed_target = self._evaluate_target(
+                    np.array(self.channel_data.nonzero()).T,
+                    self.knns[point_path][target_channel],
+                    self.channel_data
+                )
 
-            figure_updates['target_denoised'] = (
-                f"{point_path.split('/')[-1]} - {target_channel} denoised w/ {self.get_params()}",
-                ImagePlot(processed_target, fixed_contrast=True)
-            )
+                figure_updates['target_denoised'] = (
+                    f"{point_path.split('/')[-1]} - {target_channel} w/ {self.get_params()}",
+                    ImagePlot(processed_target, fixed_contrast=True)
+                )
 
         self.update_figures(figure_updates)
 
         self.current_point = point_path
 
-    def _generate_knn(self, channel_data: Any) -> Any:
+    def _generate_knn(self, channel_data: Any, k_val: int = 0) -> Any:
         """Generates mean knn distance image for denoising
 
         Args:
@@ -470,17 +504,21 @@ class KnnDenoising(QtWidgets.QMainWindow):
         Returns:
             tuple: nonzero indicies, generated mean knn distances
         """
-        params = self.get_params()
+        if k_val == 0:
+            k_val = self.get_params()['kval']
 
         non_zeros = np.array(channel_data.nonzero()).T
-        nbrs = NearestNeighbors(n_neighbors=int(params['kval'] + 1), algorithm='kd_tree').fit(non_zeros)
+        nbrs = NearestNeighbors(
+            n_neighbors=int(k_val + 1),
+            algorithm='kd_tree').fit(non_zeros)
+
         distances, _ = nbrs.kneighbors(non_zeros)
 
         knn_mean = np.mean(distances[:, 1:], axis=1)
 
         return non_zeros, knn_mean
 
-    def _evaluate_target(self, non_zeros: Any, knn: Any, channel_data: Any) -> Any:
+    def _evaluate_target(self, non_zeros: Any, knn: Any, channel_data: Any, cap: bool = True) -> Any:
         """
         """
         params = self.get_params()
@@ -489,22 +527,128 @@ class KnnDenoising(QtWidgets.QMainWindow):
         bad_inds = non_zeros[knn > params['thresh']].T
         if bad_inds.size > 0:
             denoised[bad_inds[0], bad_inds[1]] = 0
-        denoised[denoised > params['cap']] = params['cap']
+        if cap:
+            denoised[denoised > params['cap']] = params['cap']
 
         return denoised
 
-    def optimize_thresholds(self) -> None:
+    # TODO: implement status window
+    def run_knns(self) -> None:
         """
         """
 
-        _, knn = self._generate_knn(self.channel_data)
-        opt_thresh = optimize_threshold(knn)
+        for point in self.settings.keys():
+            print(f'running point: {point}')
+            if point not in self.knns.keys():
+                self.knns[point] = {}
+            for i, channel in enumerate(self.settings[point].keys()):
+                print(f'    running channel: {channel}  ({i}/{len(self.settings[point].keys())})')
+                params = self.settings[point][channel]
+                self.channel_data = self.main_viewer.CohortTreeWidget.get_item(
+                    f'{point}/{channel}'
+                ).get_image_data()
 
-        params = self.get_params()
-        params['thresh'] = opt_thresh
-        self.set_params(params)
+                if channel not in self.knns[point].keys():
+                    _, self.knns[point][channel] = \
+                        self._generate_knn(self.channel_data, params['kval'])
 
-        self.refocus_plots()
+                if self.optAllButton.isChecked():
+                    print(f'        optimizing threshold...')
+                    if 'opt_thresh' not in self.settings[point][channel].keys():
+                        opt_thresh = optimize_threshold(self.knns[point][channel])
+                        self.settings[point][channel]['opt_thresh'] = opt_thresh
+                    else:
+                        opt_thresh = self.settings[point][channel]['opt_thresh']
+                    self.settings[point][channel]['thresh'] = opt_thresh
+
+    def save_settings(self) -> None:
+        """ write background removal settings out to json
+        """
+
+        settings_dir = self.main_viewer.CohortTreeWidget.topLevelItem(0).path
+
+        with open(os.path.join(settings_dir, 'denoising_settings.json'), 'w') as fp:
+            json.dump(self.settings, fp, indent=4)
+
+    def load_settings(self) -> None:
+        """ load settings from json file
+        """
+        self.prevent_plotting = True
+
+        settings_path = str(QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Load Settings',
+            self.main_viewer.CohortTreeWidget.topLevelItem(0).path,
+            'JSON files(*.json)'
+        )[0])
+
+        with open(os.path.join(settings_path), 'r') as fp:
+            new_settings: Dict[str, Dict[str, Dict[str, Any]]] = json.load(fp)
+
+        # TODO: clean settings
+        self.settings = new_settings
+
+        # check points as needed
+        for point, targets in new_settings.items():
+            column = len(point.split('/')) - 1
+            tree_item = self.pointTree.findItems(point, QtCore.Qt.MatchExactly, column=column)[0]
+            tree_item.setCheckState(0, QtCore.Qt.Checked)
+
+        # reuse last targest iteration to check targets
+        for target, params in targets.items():
+            if target in self.channels:
+                target_index = [
+                    self.channelList.item(i).text()
+                    for i in range(self.channelList.count())].index(target)
+                
+                self.channelList.item(target_index).setCheckState(True)
+
+        self.prevent_plotting = False
+
+    def denoise(self) -> None:
+        """ run full denoising on all selected points/channels and save output
+        """
+        self.prevent_plotting = True
+
+        # copy directory
+        src_dir = self.main_viewer.CohortTreeWidget.topLevelItem(0).path
+        parent_dir = os.path.dirname(src_dir[:-1])
+        tmp_dir = os.path.join(parent_dir, 'denoised_temp')
+        final_dir = os.path.join(parent_dir, 'denoised')
+
+        shutil.copytree(src_dir, tmp_dir)
+
+        # loop over settings
+        for point, targets in self.settings.items():
+            for target, params in targets.items():
+                target_item = self.main_viewer.CohortTreeWidget.get_item(f'{point}/{target}')
+                if target_item is None:
+                    continue
+                target_data = target_item.get_image_data()
+                self.set_params(params)
+
+                ## Do denoising here
+                if point in self.knns.keys() and target in self.knns[point].keys():
+                    target_data_cleaned = self._evaluate_target(
+                        np.array(target_data.nonzero()).T,
+                        self.knns[point][target],
+                        target_data
+                    )
+                else:
+                    nz, knn = self._generate_knn(target_data)
+                    target_data_cleaned = self._evaluate_target(
+                        nz,
+                        knn,
+                        target_data
+                    )
+                target_item.write_image_data(target_data_cleaned)
+
+        # rename directories
+        os.rename(src_dir, final_dir)
+        os.rename(tmp_dir, src_dir)
+
+        self.prevent_plotting = False
+
 
 # function for amp plugin building
 def build_as_plugin(main_viewer: MainViewer, plugin_path: str) -> KnnDenoising:
