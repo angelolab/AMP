@@ -1,6 +1,6 @@
 # start custom imports - DO NOT MANUALLY EDIT BELOW
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
-from PyQt5 import QtWidgets, QtCore, uic
+from PyQt5 import QtWidgets, QtCore, QtGui, uic
 
 from amp.main_viewer import MainViewer
 from amp.mplwidget import ImagePlot, HistPlot, Plot
@@ -160,6 +160,14 @@ class KnnDenoising(QtWidgets.QMainWindow):
             self
         )
 
+        if self.main_viewer.CohortTreeWidget.head is None:
+            self.main_viewer.spawn_popup(
+                "No Loaded Cohort",
+                "Please load a cohort before loading a plugin..."
+            )
+            self.close()
+            return;
+
         # TODO: move this (and channels) into a refresh function (callable by main viewer that way)
         # load point tree from main_viewer into pointTree
         self.pointTree.addTopLevelItem(
@@ -293,6 +301,17 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         self.channelList.itemChanged.connect(target_list_changed_callback)
         self.channelList.itemClicked.connect(target_list_clicked_callback)
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        if self.main_viewer.CohortTreeWidget.head is None:
+            self.main_viewer.spawn_popup(
+                "No Loaded Cohort",
+                "Please load a cohort before loading a plugin..."
+            )
+            a0.ignore()
+            return;
+        else:
+            return super().showEvent(a0)
 
         # closeEvent is reserved by pyqt so it can't follow style guide :/
     def closeEvent(self, event: QtCore.QEvent) -> None:

@@ -14,7 +14,7 @@ from amp.contrast_window import ContrastWindow
 from amp.mplwidget import ImagePlot
 from amp.figure_manager import FigureManager
 
-import  skimage.io as io
+import skimage.io as io
 from numpy import asarray
 
 import os
@@ -107,18 +107,31 @@ class MainViewer(QtWidgets.QMainWindow):
 
         event.accept()
 
-    def create_plugin_callback(self, ui_name: str) -> Any:
+    def spawn_popup(self, title: str, body: str) -> None:
+        """ Spawns pop-up window with given title and body
+
+        Args:
+            title (str): title for the pop up window
+            body (str): body text for the pop up window
+        """
+
+        msgbox = QtWidgets.QMessageBox(self)
+        msgbox.setText(title)
+        msgbox.setInformativeText(body)
+        msgbox.exec()
+
+    def create_plugin_callback(self, ui_path: str) -> Any:
         """ Creates a callback function for showing/opening the plugin
 
         Args:
-            ui_name: Key to access plugin within plugins dictionary
+            ui_path: Key to access plugin within plugins dictionary
 
         Returns:
             Callback function to show/open the plugin
 
         """
         def plugin_callback():
-            self.plugins[ui_name].show()
+            self.plugins[ui_path].show()
         return plugin_callback
 
     def on_plot_item_change(self, item: PlotListWidgetItem) -> None:
@@ -186,10 +199,25 @@ class MainViewer(QtWidgets.QMainWindow):
                                                                 'Open Cohort',
                                                                 '~',
                                                                 flags)
-        if folderpath == "":
-            return
-            
+        if folderpath != "":
+            self.replace_cohort(folderpath)
+
+    def replace_cohort(self, folderpath: str) -> None:
+        """ Clears out any existing loaded cohort information in the viewer and any loaded plugins
+        and replaces it with that of the new cohort
+        """
+        if self.CohortTreeWidget.head is not None:
+            self.CohortTreeWidget.clear()
+            for i in range(self.PlotListWidget.count()):
+                self.PlotListWidget.delete_item(i)
+            self.PlotListWidget.clear()
+
         self.CohortTreeWidget.load_cohort(folderpath)
+
+        # refresh plugins
+        for ui_path in self.plugins:
+            self.plugins[ui_path].close()
+            self.plugins[ui_path] = load_plugin(ui_path, self)
 
     def on_file_toggle(self, item: CohortTreeWidgetItem, column: int) -> None:
         """ Callback for toggling image plot of tiff file
@@ -257,8 +285,8 @@ class MainViewer(QtWidgets.QMainWindow):
 
         ui_name = os.path.basename(ui_path).split('.')[0]
         # load plugin if it doesn't exist already
-        if ui_name not in self.plugins.keys():
-            self.plugins[ui_name] = load_plugin(ui_path, self)
+        if ui_path not in self.plugins.keys():
+            self.plugins[ui_path] = load_plugin(ui_path, self)
 
             # TODO: cache plugin so its present on reopening
             #
@@ -266,7 +294,7 @@ class MainViewer(QtWidgets.QMainWindow):
             # bind plugin+creation callback to menu action
             self.menuPlugins.addAction(
                 ui_name,
-                self.create_plugin_callback(ui_name))
+                self.create_plugin_callback(ui_path))
 
     def delete_plot_item(self) -> None:
         """ Callback for removing a PlotListWidgetItem
