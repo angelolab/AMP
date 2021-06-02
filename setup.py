@@ -9,12 +9,13 @@ dependencies = [
     'numpy>=1.19.2',
     'PyQt5==5.9.2',
     'scipy>=1.5.2',
-    'scikit-image==0.17.2'
+    'scikit-image==0.17.2',
+    'scikit-learn==0.24.2'
 ]
 
 setuptools.setup(
     name="amp",
-    version="0.1.0-alpha",
+    version="0.2.0-alpha",
     author="Angelo Lab",
     author_email="ackagel@stanford.edu",
     description="Base AMP importable modules",

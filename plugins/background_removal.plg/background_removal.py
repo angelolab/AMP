@@ -1,6 +1,6 @@
 # start custom imports - DO NOT MANUALLY EDIT BELOW
 # end custom imports - DO NOT MANUALLY EDIT ABOVE
-from PyQt5 import QtWidgets, QtCore, uic
+from PyQt5 import QtWidgets, QtCore, QtGui, uic
 
 from amp.main_viewer import MainViewer
 from amp.mplwidget import ImagePlot
@@ -78,6 +78,14 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
             ui_path,
             self
         )
+
+        if self.main_viewer.CohortTreeWidget.head is None:
+            self.main_viewer.spawn_popup(
+                "No Loaded Cohort",
+                "Please load a cohort before loading a plugin..."
+            )
+            self.close()
+            return;
 
         # TODO: move this (and channels) into a refresh function (callable by main viewer that way)
         # load point tree from main_viewer into pointTree
@@ -180,6 +188,18 @@ class BackgroundRemoval(QtWidgets.QMainWindow):
         """
 
         event.accept()
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        if self.main_viewer.CohortTreeWidget.head is None:
+            self.main_viewer.spawn_popup(
+                "No Loaded Cohort",
+                "Please load a cohort before loading a plugin..."
+            )
+            a0.ignore()
+            return;
+        else:
+            return super().showEvent(a0)
+
 
     def get_params(self) -> Dict:
         """ Get parameter settings
