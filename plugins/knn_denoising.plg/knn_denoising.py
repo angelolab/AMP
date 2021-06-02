@@ -556,12 +556,29 @@ class KnnDenoising(QtWidgets.QMainWindow):
         """
         """
 
+        progress_dialog = QtWidgets.QProgressDialog(
+            'Running KNNs..',
+            None,
+            0, 
+            self.pointPlotSelect.count() * self.channelPlotSelect.count(),
+            self
+        )
+        progress_dialog.setMinimumDuration(0)
+        progress_dialog.show()
+        progress_dialog.setValue(0)
+
+        progress = 0
         for point in self.settings.keys():
-            print(f'running point: {point}')
+            point_text = f'Running {point} - '
             if point not in self.knns.keys():
                 self.knns[point] = {}
             for i, channel in enumerate(self.settings[point].keys()):
-                print(f'    running channel: {channel}  ({i}/{len(self.settings[point].keys())})')
+                channel_txt = f'channel {channel} - '
+                action_txt = f'computing knn...'
+                progress_dialog.setLabelText(point_text + channel_txt + action_txt)
+                progress_dialog.show()
+                QtCore.QCoreApplication.instance().processEvents()
+
                 params = self.settings[point][channel]
                 self.channel_data = self.main_viewer.CohortTreeWidget.get_item(
                     f'{point}/{channel}'
@@ -572,7 +589,11 @@ class KnnDenoising(QtWidgets.QMainWindow):
                         self._generate_knn(self.channel_data)
 
                 if self.optAllButton.isChecked():
-                    print(f'        optimizing threshold...')
+                    action_txt = f'optimizing threshold...'
+                    progress_dialog.setLabelText(point_text + channel_txt + action_txt)
+                    progress_dialog.show()
+                    QtCore.QCoreApplication.instance().processEvents()
+
                     if 'opt_thresh' not in self.settings[point][channel].keys():
                         opt_thresh = optimize_threshold(self.knns[point][channel])
                         self.settings[point][channel]['opt_thresh'] = opt_thresh
@@ -582,6 +603,11 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
                 # set display cap to ~99th percentile
                 self.settings[point][channel]['cap'] = np.percentile(self.channel_data, 99) + 1
+
+                progress += 1
+                progress_dialog.setValue(progress)
+
+        progress_dialog.close()
 
     def save_settings(self) -> None:
         """ write background removal settings out to json
