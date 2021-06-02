@@ -109,6 +109,8 @@ def optimize_threshold(knn_dists):
 
     return x[np.argmin(np.abs(dist1 - dist2))]
 
+_DEFAULT_KVAL = 25
+
 class KnnDenoising(QtWidgets.QMainWindow):
 
     def __init__(self, main_viewer: MainViewer, ui_path: str):
@@ -133,8 +135,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
         self.label_7: QtWidgets.QLabel
         self.pointPlotSelect: QtWidgets.QComboBox
         self.label_6: QtWidgets.QLabel
-        self.optAllButton: QtWidgets.QRadioButton
         self.optThreshButton: QtWidgets.QPushButton
+        self.optAllButton: QtWidgets.QRadioButton
+        self.toggleChannelsButton: QtWidgets.QPushButton
         self.channelList: QtWidgets.QListWidget
         self.channelTab: QtWidgets.QWidget
         self.pointTree: QtWidgets.QTreeWidget
@@ -173,6 +176,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 channel_item.setCheckState(QtCore.Qt.Unchecked)
 
         self.pointTree.itemChanged.connect(self.on_point_toggle)
+        
+        self.toggleChannelsButton.clicked.connect(self.on_channels_toggle)
+
         self.runDenoiseButton.clicked.connect(self.denoise)
         self.saveSettingsButton.clicked.connect(self.save_settings)
         self.loadSettingsButton.clicked.connect(self.load_settings)
@@ -209,6 +215,7 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         # add plot point select callback
         self.pointPlotSelect.currentIndexChanged.connect(lambda x: self.refocus_plots())
+        self.channelPlotSelect.currentIndexChanged.connect(lambda x: self.refocus_plots())
 
         # set callback for threshold optimizing
         self.optThreshButton.clicked.connect(self.run_knns)
@@ -245,49 +252,31 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         self.setWindowTitle("KNN Denoising")
 
-        # define and set callbacks
+        # define and set target list callback
         def target_list_changed_callback(item: QtWidgets.QListWidgetItem) -> None:
-            if self.prevent_plotting:
-                return
 
+            # check for current point
             if self.current_point not in self.settings.keys():
                 if item.checkState():
                     item.setCheckState(False)
-
                 return
 
             if item.checkState():
+                # populate channel plot select dropdown
+                self.channelPlotSelect.addItem(item.text());
+
                 # init settings and refocus plot
                 self.settings[self.current_point][item.text()] = self.get_params()
-                if item.text() != self.current_channel:
-                    # set item to current
-                    item.listWidget().setCurrentItem(item)
-                    self.refocus_plots()
-                    self.current_channel = item.text()
             else:
+                # remove channel from dropdown
+                item_index = self.channelPlotSelect.findText(item.text(), QtCore.Qt.MatchExactly)
+                self.channelPlotSelect.removeItem(item_index)
+
                 # clean up removal settings
-                self.settings[self.current_point].pop(item.text())
-                self.current_channel = item.text()
-
-        # refocus plots if called
-        def target_list_clicked_callback(item: QtWidgets.QListWidgetItem,
-                                         settings=self.settings) -> None:
-            if self.prevent_plotting:
-                return
-
-            if item.checkState():
-                # load settings if they exist
-                if self.current_point in settings.keys():
-                    if item.text() in settings[self.current_point].keys():
-                        self.replot_on_spinchange = False
-                        self.set_params(settings[self.current_point][item.text()])
-                        self.replot_on_spinchange = True
-                if item.text() != self.current_channel:
-                    self.refocus_plots()
-                    self.current_channel = item.text()
+                for point in self.settings.keys():
+                    self.settings[point].pop(item.text())
 
         self.channelList.itemChanged.connect(target_list_changed_callback)
-        self.channelList.itemClicked.connect(target_list_clicked_callback)
 
         # closeEvent is reserved by pyqt so it can't follow style guide :/
     def closeEvent(self, event: QtCore.QEvent) -> None:
@@ -366,6 +355,20 @@ class KnnDenoising(QtWidgets.QMainWindow):
             for child in [item.child(index) for index in range(item.childCount())]:
                 child.setCheckState(0, item.checkState(0))
 
+    def on_channels_toggle(self) -> None:
+        """ Callback for toggling channel selections.
+        
+        Turns on all channels, or turns off all channels if all channels are selected.
+        """
+
+        toggle_val = not all([
+            self.channelList.item(idx).checkState()
+            for idx in range(self.channelList.count())
+        ])
+
+        for channel_idx in range(self.channelList.count()):
+            self.channelList.item(channel_idx).setCheckState(toggle_val)
+
     def get_params(self) -> Dict:
         """ Get parameter settings
         """
@@ -405,20 +408,22 @@ class KnnDenoising(QtWidgets.QMainWindow):
             return
 
         target_channel = None
-        if self.channelList.currentItem() is None:
+        if self.channelPlotSelect.currentText() is None:
             self.current_point = point_path
             if point_path not in self.settings.keys():
                 self.settings[point_path] = {}
             return
 
-        if self.channelList.currentItem().checkState():
-            target_channel = self.channelList.currentItem().text()
+        target_channel = self.channelPlotSelect.currentText()
 
         if target_channel == '' or target_channel is None:
             self.current_point = point_path
             if point_path not in self.settings.keys():
                 self.settings[point_path] = {}
             return
+
+        if target_channel not in self.settings[point_path].keys():
+            self.settings[point_path][target_channel] = self.get_params()
 
         if (point_path != self.current_point
             or target_channel != self.current_channel
@@ -431,7 +436,6 @@ class KnnDenoising(QtWidgets.QMainWindow):
         # update settings if necessary
         recalcs = {
             'thresh': True,
-            'kval': False,
             'cap': True,
         }
         if point_path == self.current_point and target_channel == self.current_channel:
@@ -457,12 +461,8 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         # generate mean dist knn
         if point_path in self.knns.keys() and target_channel in self.knns[point_path].keys():
-            if recalcs['kval']:
-                _, self.knns[point_path][target_channel] = \
-                    self._generate_knn(self.channel_data)
-                print('recomputing knn :(')
 
-            if recalcs['kval'] or recalcs['thresh']:
+            if recalcs['thresh']:
                 figure_updates['knn_hist'] = (
                     f"{point_path.split('/')[-1]} channel {target_channel} knn hist",
                     HistPlot(
@@ -488,8 +488,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
         self.update_figures(figure_updates)
 
         self.current_point = point_path
+        self.current_channel = target_channel
 
-    def _generate_knn(self, channel_data: Any, k_val: int = 0) -> Any:
+    def _generate_knn(self, channel_data: Any, k_val: int = _DEFAULT_KVAL) -> Any:
         """Generates mean knn distance image for denoising
 
         Args:
@@ -498,8 +499,6 @@ class KnnDenoising(QtWidgets.QMainWindow):
         Returns:
             tuple: nonzero indicies, generated mean knn distances
         """
-        if k_val == 0:
-            k_val = self.get_params()['kval']
 
         non_zeros = np.array(channel_data.nonzero()).T
         nbrs = NearestNeighbors(
@@ -544,7 +543,7 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
                 if channel not in self.knns[point].keys():
                     _, self.knns[point][channel] = \
-                        self._generate_knn(self.channel_data, params['kval'])
+                        self._generate_knn(self.channel_data)
 
                 if self.optAllButton.isChecked():
                     print(f'        optimizing threshold...')
@@ -554,6 +553,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
                     else:
                         opt_thresh = self.settings[point][channel]['opt_thresh']
                     self.settings[point][channel]['thresh'] = opt_thresh
+
+                # set display cap to ~99th percentile
+                self.settings[point][channel]['cap'] = np.percentile(self.channel_data, 99) + 1
 
     def save_settings(self) -> None:
         """ write background removal settings out to json
