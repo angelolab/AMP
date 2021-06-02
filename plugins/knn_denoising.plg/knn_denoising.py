@@ -120,32 +120,26 @@ class KnnDenoising(QtWidgets.QMainWindow):
         self.loadSettingsButton: QtWidgets.QPushButton
         self.splitter_8: QtWidgets.QSplitter
         self.splitter_9: QtWidgets.QSplitter
-        self.optAllButton: QtWidgets.QRadioButton
-        self.optThreshButton: QtWidgets.QPushButton
         self.capSpinBox: QtWidgets.QSpinBox
         self.capSlider: QtWidgets.QSlider
         self.splitter_3: QtWidgets.QSplitter
         self.label_3: QtWidgets.QLabel
-        self.layoutWidget_2: QtWidgets.QWidget
-        self.kvalDoubleSpinBox: QtWidgets.QDoubleSpinBox
-        self.kvalSlider: QtWidgets.QSlider
-        self.splitter_2: QtWidgets.QSplitter
-        self.label_2: QtWidgets.QLabel
-        self.layoutWidget: QtWidgets.QWidget
         self.threshDoubleSpinBox: QtWidgets.QDoubleSpinBox
         self.threshSlider: QtWidgets.QSlider
         self.splitter: QtWidgets.QSplitter
         self.label: QtWidgets.QLabel
-        self.layoutWidget_0: QtWidgets.QWidget
-        self.splitter_4: QtWidgets.QSplitter
         self.groupBox: QtWidgets.QGroupBox
+        self.channelPlotSelect: QtWidgets.QComboBox
+        self.label_7: QtWidgets.QLabel
+        self.pointPlotSelect: QtWidgets.QComboBox
+        self.label_6: QtWidgets.QLabel
+        self.optAllButton: QtWidgets.QRadioButton
+        self.optThreshButton: QtWidgets.QPushButton
         self.channelList: QtWidgets.QListWidget
         self.channelTab: QtWidgets.QWidget
         self.pointTree: QtWidgets.QTreeWidget
         self.pointTab: QtWidgets.QWidget
         self.tabWidget: QtWidgets.QTabWidget
-        self.pointPlotSelect: QtWidgets.QComboBox
-        self.label_6: QtWidgets.QLabel
         self.centralwidget: QtWidgets.QWidget
         # end typedef - DO NOT MANUALLY EDIT ABOVE
 
@@ -187,7 +181,6 @@ class KnnDenoising(QtWidgets.QMainWindow):
         spin_slider_pairs: List[Tuple[QtWidgets.QSpinBox, QtWidgets.QSlider]] = \
             [
                 (self.threshDoubleSpinBox, self.threshSlider),
-                (self.kvalDoubleSpinBox, self.kvalSlider),
                 (self.capSpinBox, self.capSlider),
             ]
         # assumes minimum is always 0
@@ -195,7 +188,10 @@ class KnnDenoising(QtWidgets.QMainWindow):
         for spin_box, slider in spin_slider_pairs:
             def spinbox_change(spi=spin_box, sli=slider):
                 sli.setValue(
-                    round(float(sli.maximum()) * spi.value() / spi.maximum())
+                    round(
+                        float(sli.maximum()) * (spi.value() - spi.minimum())
+                        / (spi.maximum() - spi.minimum())
+                    )
                 )
                 if self.replot_on_spinchange:
                     self.refocus_plots()
@@ -232,7 +228,6 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         self.spin_boxes: Dict[str, QtWidgets.QSpinBox] = {
             'thresh': self.threshDoubleSpinBox,
-            'kval': self.kvalDoubleSpinBox,
             'cap': self.capSpinBox,
         }
 
@@ -376,7 +371,6 @@ class KnnDenoising(QtWidgets.QMainWindow):
         """
         return {
             'thresh': self.threshDoubleSpinBox.value(),
-            'kval': self.kvalDoubleSpinBox.value(),
             'cap': self.capSpinBox.value(),
         }
 
