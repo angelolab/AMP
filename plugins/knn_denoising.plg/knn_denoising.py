@@ -172,15 +172,13 @@ class KnnDenoising(QtWidgets.QMainWindow):
             self.close()
             return;
 
-        # TODO: move this (and channels) into a refresh function (callable by main viewer that way)
         # load point tree from main_viewer into pointTree
         self.pointTree.addTopLevelItem(
             main_viewer.CohortTreeWidget.gen_quickview()
         )
 
-        # Fill channel list (TODO: see above)
-        # BONUS TODO: add refocus plot callbacks to all these!!!
-        self.channels: List[str] = main_viewer.CohortTreeWidget.get_channels()
+        # Fill channel list
+        self.channels: List[str] = sorted(main_viewer.CohortTreeWidget.get_channels())
         if self.channels is not None:
             self.channelList.addItems(self.channels)
             for channel_row in range(self.channelList.count()):
@@ -277,8 +275,12 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 return
 
             if item.checkState():
-                # populate channel plot select dropdown
-                self.channelPlotSelect.addItem(item.text());
+                # populate channel plot select dropdown w/ sort
+                all_items_sorted = sorted(
+                    [self.channelPlotSelect.itemText(i) for i in range(self.channelPlotSelect.count())]
+                    + [item.text()]
+                )
+                self.channelPlotSelect.insertItem(all_items_sorted.index(item.text()), item.text())
 
                 # init settings and refocus plot
                 self.settings[self.current_point][item.text()] = self.get_params()
@@ -551,7 +553,6 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         return denoised
 
-    # TODO: implement status window
     def run_knns(self) -> None:
         """
         """
