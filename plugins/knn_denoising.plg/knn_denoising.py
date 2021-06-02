@@ -58,7 +58,7 @@ def _gamma_mixture(x, n_dists, max_iter, init_index, tol):
 
         # compute argmax's
         a_hats = np.array([
-            fsolve(_alpha_eqn, alphas[i], args=(alpha_eq_consts[i]))[0]
+            fsolve(_alpha_eqn, alphas[i], args=(alpha_eq_consts[i]), xtol=1e-3)[0]
             for i in range(n_dists)
         ])
         b_hats = a_hats * sum_Ts / sum_Txs
@@ -91,12 +91,19 @@ def _gamma_mixture(x, n_dists, max_iter, init_index, tol):
 
 _INIT_KNN_THRESH = 6
 
-def optimize_threshold(knn_dists):
-    # approximate initial distribution assignments
-    assignment_guess = np.zeros_like(knn_dists)
-    assignment_guess[knn_dists > _INIT_KNN_THRESH] = 1
+def optimize_threshold(knn_dists, max_N = 20000):
 
-    w, alpha, beta = _gamma_mixture(knn_dists, 2, 500, assignment_guess, 1e-3)
+    knn_sample = None
+    if knn_dists.shape[0] > max_N:
+        knn_sample = np.random.choice(knn_dists, size=max_N, replace=False)
+    else:
+        knn_sample = knn_dists
+
+    # approximate initial distribution assignments
+    assignment_guess = np.zeros_like(knn_sample)
+    assignment_guess[knn_sample > _INIT_KNN_THRESH] = 1
+
+    w, alpha, beta = _gamma_mixture(knn_sample, 2, 500, assignment_guess, 1e-3)
 
     means = np.sort(alpha / beta)
     x = np.linspace(means[0], means[1], num=int(10*(means[1] - means[0])))
