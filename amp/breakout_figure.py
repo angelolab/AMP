@@ -10,7 +10,8 @@ from amp.resource_path import resource_path
 
 class BreakoutWindow(QtWidgets.QMainWindow):
 
-    def __init__(self, on_close_callback: Callable[..., None]) -> None:
+    def __init__(self, on_close_callback: Callable[..., None],
+                 title: str="Breakout Window") -> None:
         # start typedef - DO NOT MANUALLY EDIT BELOW
         self.statusbar: QtWidgets.QStatusBar
         self.menubar: QtWidgets.QMenuBar
@@ -27,6 +28,8 @@ class BreakoutWindow(QtWidgets.QMainWindow):
         )
 
         self.on_close_callback = on_close_callback
+
+        self.setWindowTitle(title)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.on_close_callback()

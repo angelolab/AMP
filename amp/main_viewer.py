@@ -327,7 +327,9 @@ class MainViewer(QtWidgets.QMainWindow):
 
             del self.breakout_windows[selected_path]
 
-        self.breakout_windows[selected_path] = BreakoutWindow(_on_close_callback)
+        self.breakout_windows[selected_path] = \
+            BreakoutWindow(_on_close_callback, title=current_selected.text())
+
         current_selected.canvas = self.breakout_windows[selected_path].MplWidget._canvas
 
         # hide current plotlistwidgetitem
