@@ -8,11 +8,12 @@ MAX_FIGS = 64
 
 
 class FigureManager(object):
-    def __init__(self, plot_list: PlotListWidget) -> None:
+    def __init__(self, main_window, plot_list: PlotListWidget) -> None:
         self.figure_map: Dict[int, Union[Plot, None]] = dict.fromkeys(range((MAX_FIGS * 3) // 2))
 
         self.open_slots = deque([0])
 
+        self.main_window = main_window
         self.plot_list = plot_list
 
     def get_figure(self, index: int) -> Plot:
@@ -100,6 +101,9 @@ class FigureManager(object):
         self.plot_list.item(row).plot = new_plot
         if name is not None:
             self.plot_list.item(row).setText(name)
+
+            if index in self.main_window.breakout_windows.keys():
+                self.main_window.breakout_windows[index].setWindowTitle(name)
 
 
     # TODO: add figure name updates

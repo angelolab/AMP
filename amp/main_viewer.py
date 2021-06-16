@@ -87,7 +87,7 @@ class MainViewer(QtWidgets.QMainWindow):
         self.contrast_window.minCapSlider.valueChanged.connect(self.refresh_contrasts)
 
         # configure figure manager
-        self.figures = FigureManager(self.PlotListWidget)
+        self.figures = FigureManager(self, self.PlotListWidget)
 
         self.setWindowTitle("Main Viewer")
 

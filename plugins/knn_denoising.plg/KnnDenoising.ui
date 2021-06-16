@@ -155,7 +155,7 @@
              <number>0</number>
             </property>
             <property name="maximum">
-             <number>470</number>
+             <number>500</number>
             </property>
             <property name="value">
              <number>3</number>
@@ -175,7 +175,7 @@
              <number>1</number>
             </property>
             <property name="minimum">
-             <double>3.000000000000000</double>
+             <double>0.000000000000000</double>
             </property>
             <property name="maximum">
              <double>50.000000000000000</double>

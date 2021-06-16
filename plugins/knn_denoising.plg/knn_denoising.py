@@ -570,10 +570,12 @@ class KnnDenoising(QtWidgets.QMainWindow):
 
         progress = 0
         for point in self.settings.keys():
+            self.current_point = point
             point_text = f'Running {point} - '
             if point not in self.knns.keys():
                 self.knns[point] = {}
             for i, channel in enumerate(self.settings[point].keys()):
+                self.current_channel = channel
                 channel_txt = f'channel {channel} - '
                 action_txt = f'computing knn...'
                 progress_dialog.setLabelText(point_text + channel_txt + action_txt)
@@ -609,6 +611,9 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 progress_dialog.setValue(progress)
 
         progress_dialog.close()
+
+        # refresh plots
+        self.refocus_plots()
 
     def save_settings(self) -> None:
         """ write background removal settings out to json
