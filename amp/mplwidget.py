@@ -13,8 +13,7 @@ import matplotlib.cm as cm
 
 from matplotlib.image import AxesImage
 
-from typing import Callable, Dict, Any, List
-
+from typing import Callable, Dict, Any, List, Union
 
 class Plot(object):
     # base class for plot objects
@@ -32,6 +31,7 @@ def image_plot_update(canvas: FigureCanvas, data: Dict[str, Any]) -> None:
     if any([isinstance(c, AxesImage) for c in canvas.axes.get_children()]):
         cur_xlim = canvas.axes.get_xlim()
         cur_ylim = canvas.axes.get_ylim()
+        #_clean_canvas()
     canvas.axes.clear()
 
     # check plot data for contrast info
@@ -49,12 +49,26 @@ def image_plot_update(canvas: FigureCanvas, data: Dict[str, Any]) -> None:
         canvas.axes.set_ylim(cur_ylim)
     canvas.draw()
 
+def hist_plot_update(canvas: FigureCanvas, data: Dict[str, Any]) -> None:
+    # HistPlot update function
+    canvas.axes.clear()
+    canvas.axes.set_aspect('auto')
+    canvas.axes.hist(data['flattened_data'], bins=data['n_bins'])
+    if data['threshold'] is not None:
+        canvas.axes.axvline(data['threshold'], color='r', linestyle='dashed', linewidth=2)
+    canvas.axes.relim()
+    canvas.draw()
 
 class ImagePlot(Plot):
     # plots images via imshow
     def __init__(self, data: Any, fixed_contrast: bool = False) -> None:
         super().__init__(image_plot_update, {'image': data, 'fixed_contrast': fixed_contrast})
 
+
+class HistPlot(Plot):
+    # plots histograms via hist
+    def __init__(self, data: Any, n_bins: int = 30, thresh: Union[float, None] = None) -> None:
+        super().__init__(hist_plot_update, {'flattened_data': data, 'n_bins': n_bins, 'threshold': thresh})
 
 # a more customizable toolbar (loadable icons)
 class CleanToolbar(NavigationToolbar):
