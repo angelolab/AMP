@@ -275,6 +275,10 @@ class KnnDenoising(QtWidgets.QMainWindow):
                 return
 
             if item.checkState():
+                # prevent channel plot select double population
+                if self.channelPlotSelect.findText(item.text(), QtCore.Qt.MatchExactly) >= 0:
+                    return
+
                 # populate channel plot select dropdown w/ sort
                 all_items_sorted = sorted(
                     [self.channelPlotSelect.itemText(i) for i in range(self.channelPlotSelect.count())]
