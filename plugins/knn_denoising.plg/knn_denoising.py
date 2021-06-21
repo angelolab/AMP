@@ -15,6 +15,7 @@ from sklearn.neighbors import NearestNeighbors
 import os
 import shutil
 import json
+import traceback
 
 # TODO: figure out how to import util files
 #       one option is to do inject stuff on load
@@ -602,8 +603,15 @@ class KnnDenoising(QtWidgets.QMainWindow):
                     QtCore.QCoreApplication.instance().processEvents()
 
                     if 'opt_thresh' not in self.settings[point][channel].keys():
-                        opt_thresh = optimize_threshold(self.knns[point][channel])
-                        self.settings[point][channel]['opt_thresh'] = opt_thresh
+                        try:
+                            opt_thresh = optimize_threshold(self.knns[point][channel])
+                            self.settings[point][channel]['opt_thresh'] = opt_thresh
+                        except ValueError as e:
+                            self.main_viewer.spawn_popup(
+                                f"Could not optimize channel '{channel}' threshold",
+                                str(e) + '\n' + traceback.format_exc()
+                            )
+                            opt_thresh = params['thresh']
                     else:
                         opt_thresh = self.settings[point][channel]['opt_thresh']
                     self.settings[point][channel]['thresh'] = opt_thresh
