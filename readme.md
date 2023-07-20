@@ -1,3 +1,6 @@
+# Deprecated 
+This repository is no longer actively maintained. For updated MIBI preprocessing, please see our [toffy](https://github.com/angelolab/toffy) repository
+
 ## Overview
 
 `AMP`, the Augmentable Mibi Pipeline, is a GUI environment for dynamically processing multiplexed
